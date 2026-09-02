@@ -15,6 +15,7 @@ use App\Lsp\Data\Controllers;
 use App\Lsp\Data\CustomBladeDirectives;
 use App\Lsp\Data\DebugInfo;
 use App\Lsp\Data\Env;
+use App\Lsp\Data\FormRequests;
 use App\Lsp\Data\InertiaViews;
 use App\Lsp\Data\Middleware;
 use App\Lsp\Data\MixManifest;
@@ -47,6 +48,7 @@ class ProjectIndex
         'customBladeDirectives' => CustomBladeDirectives::class,
         'debugInfo' => DebugInfo::class,
         'env' => Env::class,
+        'formRequests' => FormRequests::class,
         'inertiaViews' => InertiaViews::class,
         'middleware' => Middleware::class,
         'mixManifest' => MixManifest::class,
@@ -156,6 +158,14 @@ class ProjectIndex
     /**
      * Get the middleware provider.
      */
+    /**
+     * Get the form requests provider, keyed by class name.
+     */
+    public function formRequests(): Collection
+    {
+        return $this->get(__FUNCTION__);
+    }
+
     /**
      * Get the artisan commands provider.
      */
