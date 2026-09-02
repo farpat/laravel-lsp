@@ -25,6 +25,10 @@ use App\Lsp\Features\BladeComponents\BladeComponentCompletionProvider;
 use App\Lsp\Features\BladeComponents\BladeComponentHoverProvider;
 use App\Lsp\Features\BladeComponents\BladeComponentLinkProvider;
 use App\Lsp\Features\BladeDirectives\BladeDirectiveCompletionProvider;
+use App\Lsp\Features\Commands\CommandCompletionProvider;
+use App\Lsp\Features\Commands\CommandDiagnosticProvider;
+use App\Lsp\Features\Commands\CommandHoverProvider;
+use App\Lsp\Features\Commands\CommandLinkProvider;
 use App\Lsp\Features\Configs\ConfigCompletionProvider;
 use App\Lsp\Features\Configs\ConfigDiagnosticProvider;
 use App\Lsp\Features\Configs\ConfigHoverProvider;
@@ -93,6 +97,7 @@ class FeatureRegistry
         AssetLinkProvider::class,
         AuthLinkProvider::class,
         BladeComponentLinkProvider::class,
+        CommandLinkProvider::class,
         ConfigLinkProvider::class,
         ControllerActionLinkProvider::class,
         EnvLinkProvider::class,
@@ -116,6 +121,7 @@ class FeatureRegistry
         AppBindingHoverProvider::class,
         AuthHoverProvider::class,
         BladeComponentHoverProvider::class,
+        CommandHoverProvider::class,
         ConfigHoverProvider::class,
         EnvHoverProvider::class,
         InertiaHoverProvider::class,
@@ -151,6 +157,7 @@ class FeatureRegistry
         AppBindingCompletionProvider::class,
         AssetCompletionProvider::class,
         AuthCompletionProvider::class,
+        CommandCompletionProvider::class,
         ConfigCompletionProvider::class,
         EnvCompletionProvider::class,
         MiddlewareCompletionProvider::class,
@@ -167,6 +174,7 @@ class FeatureRegistry
         AppBindingDiagnosticProvider::class,
         AssetDiagnosticProvider::class,
         AuthDiagnosticProvider::class,
+        CommandDiagnosticProvider::class,
         ConfigDiagnosticProvider::class,
         ControllerActionDiagnosticProvider::class,
         EnvDiagnosticProvider::class,
