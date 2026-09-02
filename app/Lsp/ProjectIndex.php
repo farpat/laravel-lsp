@@ -9,6 +9,7 @@ use App\Lsp\Data\AppBindings;
 use App\Lsp\Data\Assets;
 use App\Lsp\Data\Auth;
 use App\Lsp\Data\BladeComponents;
+use App\Lsp\Data\Commands;
 use App\Lsp\Data\Configs;
 use App\Lsp\Data\Controllers;
 use App\Lsp\Data\CustomBladeDirectives;
@@ -40,6 +41,7 @@ class ProjectIndex
         'assets' => Assets::class,
         'auth' => Auth::class,
         'bladeComponents' => BladeComponents::class,
+        'commands' => Commands::class,
         'configs' => Configs::class,
         'controllers' => Controllers::class,
         'customBladeDirectives' => CustomBladeDirectives::class,
@@ -154,6 +156,14 @@ class ProjectIndex
     /**
      * Get the middleware provider.
      */
+    /**
+     * Get the artisan commands provider.
+     */
+    public function commands(): Collection
+    {
+        return $this->get(__FUNCTION__);
+    }
+
     public function middleware(): Collection
     {
         return $this->get(__FUNCTION__);
