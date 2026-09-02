@@ -10,6 +10,7 @@ use App\Lsp\Contracts\DiagnosticProvider;
 use App\Lsp\Contracts\FileWatcher;
 use App\Lsp\Contracts\HoverProvider;
 use App\Lsp\Contracts\LinkProvider;
+use App\Lsp\Contracts\ReferenceProvider;
 use App\Lsp\Features\AppBindings\AppBindingCompletionProvider;
 use App\Lsp\Features\AppBindings\AppBindingDiagnosticProvider;
 use App\Lsp\Features\AppBindings\AppBindingHoverProvider;
@@ -60,6 +61,7 @@ use App\Lsp\Features\Mix\MixDiagnosticProvider;
 use App\Lsp\Features\Mix\MixHoverProvider;
 use App\Lsp\Features\Mix\MixLinkProvider;
 use App\Lsp\Features\Paths\PathLinkProvider;
+use App\Lsp\Features\References\RouteNameReferenceProvider;
 use App\Lsp\Features\RequestInputs\RequestInputCompletionProvider;
 use App\Lsp\Features\RequestInputs\RequestInputDiagnosticProvider;
 use App\Lsp\Features\RequestInputs\RequestInputLinkProvider;
@@ -240,6 +242,25 @@ class FeatureRegistry
     public function hovers(): array
     {
         return $this->resolve($this->hovers);
+    }
+
+    /**
+     * Reference providers.
+     *
+     * @var array<int, class-string<ReferenceProvider>>
+     */
+    public array $references = [
+        RouteNameReferenceProvider::class,
+    ];
+
+    /**
+     * Resolve reference providers.
+     *
+     * @return array<int, ReferenceProvider>
+     */
+    public function references(): array
+    {
+        return $this->resolve($this->references);
     }
 
     /**

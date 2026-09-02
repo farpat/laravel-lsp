@@ -80,6 +80,7 @@ final class Initialize implements Method
                 ],
                 'definitionProvider' => $project->boolean('definitionProvider', true),
                 'hoverProvider'      => true,
+                'referencesProvider' => true,
             ],
             'serverInfo' => [
                 'name'    => 'Laravel LSP',
