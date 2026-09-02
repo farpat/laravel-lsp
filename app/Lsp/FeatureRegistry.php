@@ -61,6 +61,13 @@ use App\Lsp\Features\Mix\MixDiagnosticProvider;
 use App\Lsp\Features\Mix\MixHoverProvider;
 use App\Lsp\Features\Mix\MixLinkProvider;
 use App\Lsp\Features\Paths\PathLinkProvider;
+use App\Lsp\Features\References\CommandReferenceProvider;
+use App\Lsp\Features\References\ConfigReferenceProvider;
+use App\Lsp\Features\References\EnvReferenceProvider;
+use App\Lsp\Features\References\JobReferenceProvider;
+use App\Lsp\Features\References\MiddlewareReferenceProvider;
+use App\Lsp\Features\References\TranslationKeyReferenceProvider;
+use App\Lsp\Features\References\ViewNameReferenceProvider;
 use App\Lsp\Features\References\RouteNameReferenceProvider;
 use App\Lsp\Features\RequestInputs\RequestInputCompletionProvider;
 use App\Lsp\Features\RequestInputs\RequestInputDiagnosticProvider;
@@ -251,6 +258,13 @@ class FeatureRegistry
      */
     public array $references = [
         RouteNameReferenceProvider::class,
+        ConfigReferenceProvider::class,
+        EnvReferenceProvider::class,
+        CommandReferenceProvider::class,
+        ViewNameReferenceProvider::class,
+        TranslationKeyReferenceProvider::class,
+        MiddlewareReferenceProvider::class,
+        JobReferenceProvider::class,
     ];
 
     /**
