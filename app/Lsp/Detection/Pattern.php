@@ -7,6 +7,11 @@ namespace App\Lsp\Detection;
 class Pattern
 {
     /**
+     * The receiver that matches any class.
+     */
+    public const ANY_CLASS = '*';
+
+    /**
      * Create a new detected pattern instance.
      *
      * @param  array<int, string>  $classes
@@ -75,6 +80,17 @@ class Pattern
      *
      * @return array<int, string>
      */
+    /**
+     * Match a call whatever its receiver.
+     *
+     * `$this->authorize(...)` reaches a trait the current class uses, so the receiver is
+     * the class being edited, and listing the classes to look for is not an option.
+     */
+    public static function anyClass(): string
+    {
+        return self::ANY_CLASS;
+    }
+
     public static function facade(string $class): array
     {
         return [$class, self::support("Facades\\{$class}")];
@@ -135,6 +151,10 @@ class Pattern
 
         if ($this->classes === []) {
             return $class === null;
+        }
+
+        if (in_array(self::ANY_CLASS, $this->classes, true)) {
+            return true;
         }
 
         return is_string($class) && in_array($class, $this->classes, true);
