@@ -60,6 +60,9 @@ use App\Lsp\Features\Mix\MixDiagnosticProvider;
 use App\Lsp\Features\Mix\MixHoverProvider;
 use App\Lsp\Features\Mix\MixLinkProvider;
 use App\Lsp\Features\Paths\PathLinkProvider;
+use App\Lsp\Features\RequestInputs\RequestInputCompletionProvider;
+use App\Lsp\Features\RequestInputs\RequestInputDiagnosticProvider;
+use App\Lsp\Features\RequestInputs\RequestInputLinkProvider;
 use App\Lsp\Features\Routes\RouteCompletionProvider;
 use App\Lsp\Features\Routes\RouteDiagnosticProvider;
 use App\Lsp\Features\Routes\RouteHoverProvider;
@@ -106,6 +109,7 @@ class FeatureRegistry
         MiddlewareLinkProvider::class,
         MixLinkProvider::class,
         PathLinkProvider::class,
+        RequestInputLinkProvider::class,
         RouteLinkProvider::class,
         StorageLinkProvider::class,
         TranslationLinkProvider::class,
@@ -144,6 +148,7 @@ class FeatureRegistry
         LivewireComponentCompletionProvider::class,
         EloquentCompletionProvider::class,
         RouteParameterCompletionProvider::class,
+        RequestInputCompletionProvider::class,
         RouteCompletionProvider::class,
         ValidationCompletionProvider::class,
         ControllerActionCompletionProvider::class,
@@ -181,6 +186,7 @@ class FeatureRegistry
         InertiaDiagnosticProvider::class,
         MiddlewareDiagnosticProvider::class,
         MixDiagnosticProvider::class,
+        RequestInputDiagnosticProvider::class,
         RouteDiagnosticProvider::class,
         StorageDiagnosticProvider::class,
         TranslationDiagnosticProvider::class,
