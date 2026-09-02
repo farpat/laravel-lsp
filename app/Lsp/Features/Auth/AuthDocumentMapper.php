@@ -36,6 +36,28 @@ class AuthDocumentMapper extends DocumentMapper
             Pattern::method(method: ['has', 'allows', 'denies', 'check', 'any', 'none', 'authorize', 'inspect'], class: Pattern::facade('Gate'), argument: 0),
             Pattern::method(method: ['can', 'cannot'], class: [...Pattern::facade('Route'), ...Pattern::facade('Auth')], argument: 0),
             Pattern::method(method: ['@can', '@cannot', '@canany'], argument: 0),
+            ...$this->loosePatterns(),
+        ];
+    }
+
+    /**
+     * Get the patterns whose receiver cannot be resolved.
+     *
+     * A controller authorizes through the `AuthorizesRequests` trait, so the call is
+     * written on `$this` and the receiver stays unknown. The ability is only linked when
+     * a policy answers it, but an unknown name is left alone: nothing says this call is
+     * about authorization at all.
+     *
+     * @return array<int, Pattern>
+     */
+    protected function loosePatterns(): array
+    {
+        return [
+            Pattern::method(
+                method: ['authorize', 'authorizeForUser'],
+                class: Pattern::anyClass(),
+                argument: 0,
+            ),
         ];
     }
 
@@ -103,10 +125,34 @@ class AuthDocumentMapper extends DocumentMapper
      */
     protected function toDiagnostics(DetectedArgument $argument): array
     {
+        if ($this->isLoose($argument)) {
+            return [];
+        }
+
         return collect($argument->literalStringValues())
             ->flatMap(fn (array $value): array => $this->diagnosticFrom($argument, $value['value'], $value['range']))
             ->values()
             ->all();
+    }
+
+    /**
+     * Determine if the argument was matched only by a pattern with an unknown receiver.
+     */
+    protected function isLoose(DetectedArgument $argument): bool
+    {
+        $item = $argument->item();
+
+        if (!in_array($item['methodName'] ?? null, ['authorize', 'authorizeForUser'], true)) {
+            return false;
+        }
+
+        $listed = [
+            ...Pattern::facade('Gate'),
+            ...Pattern::facade('Auth'),
+            Pattern::contract('Auth\\Access\\Gate'),
+        ];
+
+        return !in_array($item['className'] ?? null, $listed, true);
     }
 
     /**
@@ -186,8 +232,11 @@ class AuthDocumentMapper extends DocumentMapper
 
         $class = $this->modelClass($argument);
 
+        // `authorize('update', $user)` names its model with a variable, whose type is not
+        // resolved here. The whole group is kept: the caller only links an ability a
+        // single policy answers, so an ambiguous one still leads nowhere.
         return $class === null
-            ? collect()
+            ? $policies
             : $policies->filter(fn (array $policy): bool => ($policy['model'] ?? null) === $class)->values();
     }
 
@@ -233,7 +282,16 @@ class AuthDocumentMapper extends DocumentMapper
         return collect($this->project->index->auth()['policies'] ?? [])
             ->map(fn (array $policies, string $ability): array => [
                 'ability'  => $ability,
-                'policies' => collect($policies),
+                // A policy registered by the application and discovered by convention is
+                // the same method twice. Left as is, the ability looks ambiguous and
+                // never links anywhere.
+                'policies' => collect($policies)
+                    ->unique(fn (array $policy): string => implode(':', [
+                        $policy['policy'] ?? '',
+                        $policy['uri'] ?? '',
+                        $policy['line'] ?? '',
+                    ]))
+                    ->values(),
             ])
             ->values();
     }

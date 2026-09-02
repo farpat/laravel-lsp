@@ -130,6 +130,13 @@ class RequestInputDocumentMapper extends DocumentMapper
      */
     protected function toDiagnostics(DetectedArgument $argument): array
     {
+        // Only a `validate([...])` written in this file states its rules in full. A form
+        // request builds them in PHP, often behind a condition, so an input missing from
+        // what could be read there proves nothing.
+        if ($this->formRequestFor($argument) !== null) {
+            return [];
+        }
+
         $keys = $this->keysFor($argument);
 
         // Nothing declares the inputs of this request: every name is as good as another.
@@ -181,6 +188,19 @@ class RequestInputDocumentMapper extends DocumentMapper
     protected function keysFor(DetectedArgument $argument): array
     {
         return $this->keysForClass($argument->item()['className'] ?? null);
+    }
+
+    /**
+     * Get the form request the given call reads from, if it reads from one.
+     *
+     * @return array<string, mixed>|null
+     */
+    protected function formRequestFor(DetectedArgument $argument): ?array
+    {
+        $className = $argument->item()['className'] ?? null;
+        $formRequest = is_string($className) ? $this->formRequests()->get($className) : null;
+
+        return is_array($formRequest) ? $formRequest : null;
     }
 
     /**
