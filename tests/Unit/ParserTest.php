@@ -4,7 +4,7 @@ use App\Parser\Walker;
 
 function fromFile($file)
 {
-    return file_get_contents(__DIR__ . '/../snippets/' . $file . '.php');
+    return file_get_contents(__DIR__ . '/../../snippets/' . $file . '.php');
 }
 
 function createContext($values)
