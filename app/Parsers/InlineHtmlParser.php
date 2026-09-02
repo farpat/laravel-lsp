@@ -6,6 +6,9 @@ use App\Contexts\AbstractContext;
 use App\Contexts\Blade;
 use App\Parser\Parse;
 use App\Parser\Settings;
+use Microsoft\PhpParser\Node\Attribute;
+use Microsoft\PhpParser\Node\Expression\CallExpression;
+use Microsoft\PhpParser\Node\Expression\ObjectCreationExpression;
 use Microsoft\PhpParser\Node\Statement\InlineHtml;
 use Microsoft\PhpParser\Parser;
 use Microsoft\PhpParser\PositionUtilities;
@@ -16,6 +19,7 @@ use Stillat\BladeParser\Nodes\DirectiveNode;
 use Stillat\BladeParser\Nodes\EchoNode;
 use Stillat\BladeParser\Nodes\EchoType;
 use Stillat\BladeParser\Nodes\LiteralNode;
+use Stillat\BladeParser\Nodes\PhpBlockNode;
 
 class InlineHtmlParser extends AbstractParser
 {
@@ -87,6 +91,10 @@ class InlineHtmlParser extends AbstractParser
 
             if ($child instanceof EchoNode) {
                 $this->parseEchoNode($child);
+            }
+
+            if ($child instanceof PhpBlockNode) {
+                $this->parsePhpBlock($child);
             }
 
             $this->parseBladeContent($child);
@@ -166,6 +174,51 @@ class InlineHtmlParser extends AbstractParser
         $child->methodName = '@' . substr($child->methodName, mb_strlen($safetyPrefix));
 
         $this->items[] = $child;
+    }
+
+    /**
+     * An `@php` block holds plain PHP, but it reaches here as a directive without
+     * arguments, so nothing used to look inside it. Its content is parsed as its own
+     * source file, and every line it reports is moved back onto the Blade file.
+     */
+    protected function parsePhpBlock(PhpBlockNode $node)
+    {
+        $snippet = "<?php\n" . $node->innerContent;
+
+        $sourceFile = (new Parser)->parseSourceFile($snippet);
+
+        // `@php $a = 1; @endphp` puts its code on the directive's own line, where the
+        // snippet lost everything written before it. A block opened on its own line
+        // starts with a newline and needs no such correction.
+        $inlineOffset = str_starts_with($node->innerContent, "\n")
+            ? 0
+            : $node->position->startColumn + 3;
+
+        Settings::$calculatePosition = function (Range $range) use ($node, $inlineOffset) {
+            if ($inlineOffset > 0 && $range->start->line === 1) {
+                $range->start->character += $inlineOffset;
+                $range->end->character += $inlineOffset;
+            }
+
+            $range->start->line += $this->startLine + $node->position->startLine - 2;
+            $range->end->line += $this->startLine + $node->position->startLine - 2;
+
+            return $range;
+        };
+
+        // A block holds statements, not a single expression, and a call can sit anywhere
+        // inside one. Collecting them as they are visited is what the detect walker does
+        // with plain PHP, and it keeps `$a = route('home');` visible.
+        Parse::parse(
+            node: $sourceFile,
+            callback: function ($node, AbstractContext $context): void {
+                if ($node instanceof CallExpression
+                    || $node instanceof ObjectCreationExpression
+                    || $node instanceof Attribute) {
+                    $this->items[] = $context;
+                }
+            },
+        );
     }
 
     protected function parseEchoNode(EchoNode $node)
