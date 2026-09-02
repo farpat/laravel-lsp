@@ -85,6 +85,21 @@ class RequestInputDocumentMapper extends DocumentMapper
     }
 
     /**
+     * Get matched request input arguments being completed.
+     *
+     * @param  array<string, mixed>  $position
+     * @return Collection<int, AutocompleteArgument>
+     */
+    public function completionArguments(Document $document, array $position): Collection
+    {
+        // The inputs can be declared by the document itself, which the completion path
+        // would otherwise never see.
+        $this->document = $document;
+
+        return parent::completionArguments($document, $position);
+    }
+
+    /**
      * Convert the given argument to document links.
      *
      * @return array<int, array<string, mixed>>
