@@ -8,7 +8,7 @@ use App\Lsp\Project;
 use Illuminate\Support\Collection;
 
 /**
- * The contents of every PHP file of the project, kept between searches.
+ * The contents of every searchable file of the project, kept between searches.
  *
  * Reading them again on each search is what makes a workspace-wide search feel slow, and
  * a reference search reads the same files over and over.
@@ -28,6 +28,17 @@ class WorkspaceIndex
      * @var array<int, string>
      */
     protected const EXCLUDED = ['vendor', 'node_modules', 'storage', 'public'];
+
+    /**
+     * Extensions worth reading.
+     *
+     * A name does not stay in PHP: a route reached through Ziggy, a translation key read
+     * by the front end, are usages like any other, and a declaration that looks unused
+     * because its callers are written in TypeScript is worse than no answer at all.
+     *
+     * @var array<int, string>
+     */
+    protected const EXTENSIONS = ['php', 'js', 'jsx', 'ts', 'tsx', 'vue'];
 
     /**
      * Create a new workspace index instance.
@@ -121,7 +132,7 @@ class WorkspaceIndex
     }
 
     /**
-     * Read every project PHP file.
+     * Read every project file worth searching.
      *
      * @return array<string, string>
      */
@@ -138,7 +149,7 @@ class WorkspaceIndex
         );
 
         foreach (new \RecursiveIteratorIterator($filter) as $file) {
-            if (!$file instanceof \SplFileInfo || $file->getExtension() !== 'php') {
+            if (!$file instanceof \SplFileInfo || !in_array($file->getExtension(), self::EXTENSIONS, true)) {
                 continue;
             }
 
