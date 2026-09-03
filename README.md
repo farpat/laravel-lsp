@@ -90,7 +90,7 @@ Enable LSP support in `opencode.json` and add Laravel LSP as a custom server:
 | Eloquent              | Completions                                                 |
 | Artisan commands      | Completions, hovers, diagnostics, document links             |
 | Request inputs        | Completions, diagnostics, document links                     |
-| Event listeners       | Hovers                                                      |
+| Events                | Hovers listing the listeners, document links to the event    |
 | Usages                | References, code lenses                                     |
 
 ## Configuration
@@ -138,7 +138,7 @@ Every feature option is a boolean that defaults to `true`. Set an option to `fal
 | Authorization         | `authCompletion`              | `authDiagnostics`             | `authHover`              | `authLink`              | —                 |
 | Blade components      | `bladeComponentCompletion`    | —                             | `bladeComponentHover`    | `bladeComponentLink`    | —                 |
 | Config                | `configCompletion`            | `configDiagnostics`           | `configHover`            | `configLink`            | —                 |
-| Event listeners       | —                             | —                             | `eventListenerHover`     | —                       | —                 |
+| Events                | —                             | —                             | `eventListenerHover`     | `eventLink`             | —                 |
 | Controller actions    | `controllerActionCompletion`  | `controllerActionDiagnostics` | —                        | `controllerActionLink`  | —                 |
 | Environment variables | `envCompletion`               | `envDiagnostics`              | `envHover`               | `envLink`               | `envViteQuickFix` |
 | Inertia               | `inertiaCompletion`           | `inertiaDiagnostics`          | `inertiaHover`           | `inertiaLink`           | —                 |
@@ -165,7 +165,7 @@ Every feature option is a boolean that defaults to `true`. Set an option to `fal
 | Env variables    | `envReferences`            | `NAME=value` in a `.env` file                    |
 | Artisan commands | `commandReferences`        | the `$signature` of a command                    |
 | Middleware       | `middlewareReferences`     | an alias of `$middleware->alias([...])`          |
-| Jobs             | `jobReferences`            | the class of a dispatchable                      |
+| Jobs and events  | `jobReferences`            | the class of a dispatchable, or of an event      |
 
 `usagesCodeLens` writes the same count above every declaration of an open file, so a file says by itself what is still read.
 
