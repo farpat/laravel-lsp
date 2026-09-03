@@ -58,4 +58,28 @@ echo collect(app('events')->getRawListeners())
         ->values()
         ->all())
     ->filter(fn ($listeners) => count($listeners) > 0)
+    ->map(function ($listeners, $event) {
+        $result = [
+            'path'      => null,
+            'line'      => null,
+            'listeners' => $listeners,
+        ];
+
+        // An event is not always a class: a string name and a wildcard are listened to
+        // the same way, and neither has a file to open.
+        if (!is_string($event) || !class_exists($event)) {
+            return $result;
+        }
+
+        $reflected = new ReflectionClass($event);
+
+        if ($reflected->getFileName() === false) {
+            return $result;
+        }
+
+        return array_merge($result, [
+            'path' => LspHelper::relativePath($reflected->getFileName()),
+            'line' => $reflected->getStartLine(),
+        ]);
+    })
     ->toJson();

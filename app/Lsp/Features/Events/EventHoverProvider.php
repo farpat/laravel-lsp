@@ -42,7 +42,8 @@ class EventHoverProvider implements HoverProvider
             return null;
         }
 
-        $listeners = collect($this->project->index->events()->get($site['event'], []));
+        $event = $this->project->index->events()->get($site['event'], []);
+        $listeners = collect(is_array($event['listeners'] ?? null) ? $event['listeners'] : []);
 
         if ($listeners->isEmpty()) {
             return null;

@@ -9,9 +9,12 @@ use App\Lsp\Project;
 use Illuminate\Support\Collection;
 
 /**
- * Listeners as the application itself knows them, which is the only place they are all
- * together: the ones registered by a provider, the auto-discovered ones, the subscribers
- * and the closures.
+ * Events that are listened to, keyed by the class they are dispatched as, each with the
+ * file declaring it and its listeners.
+ *
+ * The listeners are read from the application itself, which is the only place they are
+ * all together: the ones registered by a provider, the auto-discovered ones, the
+ * subscribers and the closures.
  */
 class Events implements DataProvider
 {
@@ -24,7 +27,7 @@ class Events implements DataProvider
     }
 
     /**
-     * Get listeners keyed by the event class they react to.
+     * Get the listened events, keyed by the class they are dispatched as.
      */
     public function get(): Collection
     {
