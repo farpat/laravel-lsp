@@ -33,6 +33,7 @@ use App\Lsp\Methods\TextDocumentDefinition;
 use App\Lsp\Methods\TextDocumentDocumentLink;
 use App\Lsp\Methods\TextDocumentHover;
 use App\Lsp\Methods\TextDocumentReferences;
+use App\Lsp\Support\WorkspaceIndex;
 use App\Lsp\Transport\AmpStdioTransport;
 use App\Lsp\Transport\JsonRpcRequest;
 use App\Lsp\Transport\JsonRpcResponse;
@@ -353,5 +354,9 @@ final class Server
 
         $this->container->singletonIf(Project::class, fn () => throw new ServerNotInitializedException);
         $this->container->singletonIf(FeatureRegistry::class);
+
+        // Shared on purpose: providers are built again on every request, and each instance
+        // of its own would read the whole project again to answer one of them.
+        $this->container->singletonIf(WorkspaceIndex::class);
     }
 }
