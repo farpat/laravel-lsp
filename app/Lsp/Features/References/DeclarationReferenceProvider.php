@@ -57,7 +57,7 @@ abstract class DeclarationReferenceProvider implements ReferenceProvider
      */
     public function get(Document $document, array $position): array
     {
-        if (!$this->project->boolean($this->setting(), true) || !$this->declaredIn($document)) {
+        if (!$this->enabledFor($document)) {
             return [];
         }
 
@@ -78,6 +78,36 @@ abstract class DeclarationReferenceProvider implements ReferenceProvider
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * Get the names the given document declares, keyed by the line declaring them.
+     *
+     * @return array<int, string>
+     */
+    public function declaredLines(Document $document): array
+    {
+        if (!$this->enabledFor($document) || $this->declaration() === '') {
+            return [];
+        }
+
+        $declared = [];
+
+        foreach (explode("\n", $document->content) as $line => $text) {
+            if (preg_match($this->declaration(), $text, $found) === 1) {
+                $declared[$line] = $found[1];
+            }
+        }
+
+        return $declared;
+    }
+
+    /**
+     * Determine if this source has anything to say about the given document.
+     */
+    protected function enabledFor(Document $document): bool
+    {
+        return $this->project->boolean($this->setting(), true) && $this->declaredIn($document);
     }
 
     /**
