@@ -22,7 +22,7 @@ class MiddlewareReferenceProvider extends DeclarationReferenceProvider
      */
     protected function declaration(): string
     {
-        return '/[\'\"]([\w.-]+)[\'\"]\s*=>\s*\\?[\w\\\\]+::class/';
+        return '/[\'\"]([\w.-]+)[\'\"]\s*=>\s*\\\\?[\w\\\\]+::class/';
     }
 
     /**
