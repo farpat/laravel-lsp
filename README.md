@@ -88,6 +88,10 @@ Enable LSP support in `opencode.json` and add Laravel LSP as a custom server:
 | Validation rules      | Completions                                                 |
 | Controller actions    | Completions, diagnostics, document links                     |
 | Eloquent              | Completions                                                 |
+| Artisan commands      | Completions, hovers, diagnostics, document links             |
+| Request inputs        | Completions, diagnostics, document links                     |
+| Event listeners       | Hovers                                                      |
+| Usages                | References, code lenses                                     |
 
 ## Configuration
 
@@ -126,10 +130,12 @@ Every feature option is a boolean that defaults to `true`. Set an option to `fal
 | Feature               | Completion                    | Diagnostics                   | Hover                    | Document links          | Code actions      |
 | --------------------- | ----------------------------- | ----------------------------- | ------------------------ | ----------------------- | ----------------- |
 | Application bindings  | `appBindingCompletion`        | `appBindingDiagnostics`       | `appBindingHover`        | `appBindingLink`        | —                 |
+| Artisan commands      | `commandCompletion`           | `commandDiagnostics`          | `commandHover`           | `commandLink`           | —                 |
 | Assets                | `assetCompletion`             | `assetDiagnostics`            | —                        | `assetLink`             | —                 |
 | Authorization         | `authCompletion`              | `authDiagnostics`             | `authHover`              | `authLink`              | —                 |
 | Blade components      | `bladeComponentCompletion`    | —                             | `bladeComponentHover`    | `bladeComponentLink`    | —                 |
 | Config                | `configCompletion`            | `configDiagnostics`           | `configHover`            | `configLink`            | —                 |
+| Event listeners       | —                             | —                             | `eventListenerHover`     | —                       | —                 |
 | Controller actions    | `controllerActionCompletion`  | `controllerActionDiagnostics` | —                        | `controllerActionLink`  | —                 |
 | Environment variables | `envCompletion`               | `envDiagnostics`              | `envHover`               | `envLink`               | `envViteQuickFix` |
 | Inertia               | `inertiaCompletion`           | `inertiaDiagnostics`          | `inertiaHover`           | `inertiaLink`           | —                 |
@@ -137,10 +143,28 @@ Every feature option is a boolean that defaults to `true`. Set an option to `fal
 | Middleware            | `middlewareCompletion`        | `middlewareDiagnostics`       | `middlewareHover`        | `middlewareLink`        | —                 |
 | Mix assets            | `mixCompletion`               | `mixDiagnostics`              | `mixHover`               | `mixLink`               | —                 |
 | Path helpers          | —                             | —                             | —                        | `pathsLink`             | —                 |
+| Request inputs        | `requestInputCompletion`      | `requestInputDiagnostics`     | —                        | `requestInputLink`      | —                 |
 | Routes                | `routeCompletion`             | `routeDiagnostics`            | `routeHover`             | `routeLink`             | —                 |
 | Storage disks         | `storageCompletion`           | `storageDiagnostics`          | —                        | `storageLink`           | —                 |
 | Translations          | `translationCompletion`       | `translationDiagnostics`      | `translationHover`       | `translationLink`       | —                 |
 | Views                 | `viewCompletion`              | `viewDiagnostics`             | `viewHover`              | `viewLink`              | —                 |
+
+### Reference Options
+
+`textDocument/references` answers from a declaration: put the cursor on the line that declares a name, and the server lists where the project uses it. Each source reads its own kind of declaration, and each one can be turned off on its own.
+
+| Source           | Option                     | Declaration read on the line                     |
+| ---------------- | -------------------------- | ------------------------------------------------ |
+| Route names      | `routeNameReferences`      | `->name('orders.index')`                         |
+| Views            | `viewNameReferences`       | a Blade file, by its own path                    |
+| Translation keys | `translationKeyReferences` | a key of a translation file                      |
+| Config keys      | `configReferences`         | a top level key of a file in `config/`           |
+| Env variables    | `envReferences`            | `NAME=value` in a `.env` file                    |
+| Artisan commands | `commandReferences`        | the `$signature` of a command                    |
+| Middleware       | `middlewareReferences`     | an alias of `$middleware->alias([...])`          |
+| Jobs             | `jobReferences`            | the class of a dispatchable                      |
+
+`usagesCodeLens` writes the same count above every declaration of an open file, so a file says by itself what is still read.
 
 ## Supported Platforms
 
