@@ -15,6 +15,7 @@ use App\Lsp\Data\Controllers;
 use App\Lsp\Data\CustomBladeDirectives;
 use App\Lsp\Data\DebugInfo;
 use App\Lsp\Data\Env;
+use App\Lsp\Data\Events;
 use App\Lsp\Data\FormRequests;
 use App\Lsp\Data\InertiaViews;
 use App\Lsp\Data\Middleware;
@@ -48,6 +49,7 @@ class ProjectIndex
         'customBladeDirectives' => CustomBladeDirectives::class,
         'debugInfo' => DebugInfo::class,
         'env' => Env::class,
+        'events' => Events::class,
         'formRequests' => FormRequests::class,
         'inertiaViews' => InertiaViews::class,
         'middleware' => Middleware::class,
@@ -143,6 +145,14 @@ class ProjectIndex
      * Get the env provider.
      */
     public function env(): Collection
+    {
+        return $this->get(__FUNCTION__);
+    }
+
+    /**
+     * Get the event listeners provider, keyed by event class.
+     */
+    public function events(): Collection
     {
         return $this->get(__FUNCTION__);
     }
