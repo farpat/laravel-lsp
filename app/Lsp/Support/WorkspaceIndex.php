@@ -66,6 +66,38 @@ class WorkspaceIndex
     }
 
     /**
+     * Read the given files again, or drop the ones that are gone.
+     *
+     * Nothing else is touched: a saved file must be seen by the next search, and reading
+     * the whole project again to learn what one file now says costs far more than it
+     * gives.
+     *
+     * @param  array<int, string>  $paths  absolute paths
+     */
+    public function refresh(array $paths): void
+    {
+        if ($this->files === null) {
+            return;
+        }
+
+        foreach ($paths as $path) {
+            if (!in_array(pathinfo($path, PATHINFO_EXTENSION), self::EXTENSIONS, true)) {
+                continue;
+            }
+
+            $content = is_file($path) ? file_get_contents($path) : false;
+
+            if (is_string($content)) {
+                $this->files[$path] = $content;
+
+                continue;
+            }
+
+            unset($this->files[$path]);
+        }
+    }
+
+    /**
      * Get the lines of the given file.
      *
      * @return array<int, string>

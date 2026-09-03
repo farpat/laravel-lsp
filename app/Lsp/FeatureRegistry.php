@@ -98,6 +98,7 @@ use App\Lsp\Features\Views\ViewHoverProvider;
 use App\Lsp\Features\Views\ViewLinkProvider;
 use App\Lsp\Watchers\DataProviderWatcher;
 use App\Lsp\Watchers\PestHelperWatcher;
+use App\Lsp\Watchers\WorkspaceIndexWatcher;
 use Illuminate\Container\Container;
 
 class FeatureRegistry
@@ -227,6 +228,7 @@ class FeatureRegistry
     public array $watchers = [
         DataProviderWatcher::class,
         PestHelperWatcher::class,
+        WorkspaceIndexWatcher::class,
     ];
 
     /**
