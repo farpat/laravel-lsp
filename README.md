@@ -90,7 +90,7 @@ Enable LSP support in `opencode.json` and add Laravel LSP as a custom server:
 | Eloquent              | Completions                                                 |
 | Artisan commands      | Completions, hovers, diagnostics, document links             |
 | Request inputs        | Completions, diagnostics, document links                     |
-| Events                | Hovers listing the listeners, document links to the event    |
+| Events                | Hovers listing the listeners, document links to the event, code actions opening a listener |
 | Usages                | References, code lenses                                     |
 
 ## Configuration
@@ -135,7 +135,7 @@ Every feature option is a boolean that defaults to `true`. Set an option to `fal
 | Authorization         | `authCompletion`              | `authDiagnostics`             | `authHover`              | `authLink`              | —                 |
 | Blade components      | `bladeComponentCompletion`    | —                             | `bladeComponentHover`    | `bladeComponentLink`    | —                 |
 | Config                | `configCompletion`            | `configDiagnostics`           | `configHover`            | `configLink`            | —                 |
-| Events                | —                             | —                             | `eventListenerHover`     | `eventLink`             | —                 |
+| Events                | —                             | —                             | `eventListenerHover`     | `eventLink`             | `eventListenerCodeActions` |
 | Controller actions    | `controllerActionCompletion`  | `controllerActionDiagnostics` | —                        | `controllerActionLink`  | —                 |
 | Environment variables | `envCompletion`               | `envDiagnostics`              | `envHover`               | `envLink`               | `envViteQuickFix` |
 | Inertia               | `inertiaCompletion`           | `inertiaDiagnostics`          | `inertiaHover`           | `inertiaLink`           | —                 |

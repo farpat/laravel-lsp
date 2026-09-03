@@ -83,7 +83,7 @@ class DispatchedEvents
      *
      * @return array<int, array{event: string, range: array<string, array<string, int>>}>
      */
-    protected function on(Document $document, int $line): array
+    public function on(Document $document, int $line): array
     {
         $text = $document->lines()[$line] ?? null;
 
