@@ -22,4 +22,11 @@ interface ReferenceProvider
      * @return array<int, string>
      */
     public function declaredLines(Document $document): array;
+
+    /**
+     * Provide how many times each declaration of the document is used, keyed by its line.
+     *
+     * @return array<int, int>
+     */
+    public function counts(Document $document): array;
 }

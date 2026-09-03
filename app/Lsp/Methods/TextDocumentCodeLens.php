@@ -40,12 +40,8 @@ class TextDocumentCodeLens implements Method
         $usages = [];
 
         foreach ($this->features->references() as $provider) {
-            foreach (array_keys($provider->declaredLines($document)) as $line) {
-                $found = count($provider->get($document, ['line' => $line, 'character' => 0]));
-
-                if ($found > 0) {
-                    $usages[$line] = ($usages[$line] ?? 0) + $found;
-                }
+            foreach ($provider->counts($document) as $line => $count) {
+                $usages[$line] = ($usages[$line] ?? 0) + $count;
             }
 
             $request->cancelIfRequested();
@@ -53,7 +49,7 @@ class TextDocumentCodeLens implements Method
 
         ksort($usages);
 
-        $lines = explode("\n", $document->content);
+        $lines = $document->lines();
         $lenses = [];
 
         foreach ($usages as $line => $count) {
