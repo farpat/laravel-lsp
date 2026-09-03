@@ -15,4 +15,11 @@ interface ReferenceProvider
      * @return array<int, array<string, mixed>>
      */
     public function get(Document $document, array $position): array;
+
+    /**
+     * Provide the names the given document declares, keyed by the line declaring them.
+     *
+     * @return array<int, string>
+     */
+    public function declaredLines(Document $document): array;
 }
