@@ -25,12 +25,32 @@ class Document
     protected array $autocomplete = [];
 
     /**
+     * The cached lines of the document.
+     *
+     * @var array<int, string>|null
+     */
+    protected ?array $lines = null;
+
+    /**
      * Create a new document instance.
      */
     public function __construct(
         public readonly string $uri,
         public readonly string $content,
     ) {}
+
+    /**
+     * Get the lines of the document.
+     *
+     * Read line by line, a document is cut once: splitting it again on every read costs
+     * more than the reads themselves when a whole file is walked.
+     *
+     * @return array<int, string>
+     */
+    public function lines(): array
+    {
+        return $this->lines ??= explode("\n", $this->content);
+    }
 
     /**
      * Detect parser items in the document.
