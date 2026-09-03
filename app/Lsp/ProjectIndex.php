@@ -110,6 +110,14 @@ class ProjectIndex
     }
 
     /**
+     * Get the artisan commands provider.
+     */
+    public function commands(): Collection
+    {
+        return $this->get(__FUNCTION__);
+    }
+
+    /**
      * Get the configs provider.
      */
     public function configs(): array
@@ -158,6 +166,14 @@ class ProjectIndex
     }
 
     /**
+     * Get the form requests provider, keyed by class name.
+     */
+    public function formRequests(): Collection
+    {
+        return $this->get(__FUNCTION__);
+    }
+
+    /**
      * Get the inertia views provider.
      */
     public function inertiaViews(): array
@@ -168,22 +184,6 @@ class ProjectIndex
     /**
      * Get the middleware provider.
      */
-    /**
-     * Get the form requests provider, keyed by class name.
-     */
-    public function formRequests(): Collection
-    {
-        return $this->get(__FUNCTION__);
-    }
-
-    /**
-     * Get the artisan commands provider.
-     */
-    public function commands(): Collection
-    {
-        return $this->get(__FUNCTION__);
-    }
-
     public function middleware(): Collection
     {
         return $this->get(__FUNCTION__);
