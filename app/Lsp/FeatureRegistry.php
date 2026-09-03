@@ -43,6 +43,7 @@ use App\Lsp\Features\Env\EnvCompletionProvider;
 use App\Lsp\Features\Env\EnvDiagnosticProvider;
 use App\Lsp\Features\Env\EnvHoverProvider;
 use App\Lsp\Features\Env\EnvLinkProvider;
+use App\Lsp\Features\Events\EventCodeActionProvider;
 use App\Lsp\Features\Events\EventHoverProvider;
 use App\Lsp\Features\Events\EventLinkProvider;
 use App\Lsp\Features\Inertia\InertiaCodeActionProvider;
@@ -213,6 +214,7 @@ class FeatureRegistry
      */
     public array $codeActions = [
         EnvCodeActionProvider::class,
+        EventCodeActionProvider::class,
         InertiaCodeActionProvider::class,
         ViewCodeActionProvider::class,
     ];
