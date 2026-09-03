@@ -30,6 +30,6 @@ class JobReferenceProvider extends DeclarationReferenceProvider
      */
     protected function usage(string $quoted): string
     {
-        return '/\b(?:dispatch\w*\s*\(\s*new\s+\\?[\w\\\\]*?|new\s+\\?[\w\\\\]*?|\\?[\w\\\\]*?)(' . $quoted . ')\b\s*(?:\(|::dispatch)/';
+        return '/\b(?:dispatch\w*\s*\(\s*new\s+\\\\?[\w\\\\]*?|new\s+\\\\?[\w\\\\]*?|\\\\?[\w\\\\]*?)(' . $quoted . ')\b\s*(?:\(|::dispatch)/';
     }
 }
