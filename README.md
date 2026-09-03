@@ -165,7 +165,7 @@ Every feature option is a boolean that defaults to `true`. Set an option to `fal
 | Env variables    | `envReferences`            | `NAME=value` in a `.env` file                    |
 | Artisan commands | `commandReferences`        | the `$signature` of a command                    |
 | Middleware       | `middlewareReferences`     | an alias of `$middleware->alias([...])`          |
-| Jobs and events  | `jobReferences`            | the class of a dispatchable, or of an event      |
+| Classes          | `classReferences`          | a class, counted where it is built or dispatched |
 
 `usagesCodeLens` writes the same count above every declaration of an open file, so a file says by itself what is still read.
 

@@ -5,16 +5,20 @@ declare(strict_types=1);
 namespace App\Lsp\Features\References;
 
 /**
- * Dispatchable classes, referred to by their class name.
+ * Classes, counted where they are built or dispatched.
+ *
+ * A job and an event are reached the same way as any other class, so one source answers
+ * for all three: what is looked for is `new Thing(`, `dispatch(new Thing)` and
+ * `Thing::dispatch`, never a mention in a `use` or a type hint.
  */
-class JobReferenceProvider extends DeclarationReferenceProvider
+class ClassReferenceProvider extends DeclarationReferenceProvider
 {
     /**
      * Get the setting that turns this source off.
      */
     protected function setting(): string
     {
-        return 'jobReferences';
+        return 'classReferences';
     }
 
     /**
