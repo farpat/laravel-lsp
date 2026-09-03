@@ -39,6 +39,21 @@ class ViewNameReferenceProvider extends DeclarationReferenceProvider
     }
 
     /**
+     * Get the names the given document declares, keyed by the line declaring them.
+     *
+     * The file itself is the declaration, so the count belongs to its first line. Read
+     * line by line, every line of a Blade file would carry the same count.
+     *
+     * @return array<int, string>
+     */
+    public function declaredLines(Document $document): array
+    {
+        $name = $this->enabledFor($document) ? $this->nameAt($document, []) : null;
+
+        return $name === null ? [] : [0 => $name];
+    }
+
+    /**
      * Get the name of the view the document is, if it is one.
      *
      * A Blade file declares nothing: the file itself is the declaration, so the name is

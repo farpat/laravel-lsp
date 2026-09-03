@@ -37,38 +37,37 @@ class TextDocumentCodeLens implements Method
             return JsonRpcResponse::result($request->id(), []);
         }
 
+        $usages = [];
+
+        foreach ($this->features->references() as $provider) {
+            foreach (array_keys($provider->declaredLines($document)) as $line) {
+                $found = count($provider->get($document, ['line' => $line, 'character' => 0]));
+
+                if ($found > 0) {
+                    $usages[$line] = ($usages[$line] ?? 0) + $found;
+                }
+            }
+
+            $request->cancelIfRequested();
+        }
+
+        ksort($usages);
+
+        $lines = explode("\n", $document->content);
         $lenses = [];
-        $providers = $this->features->references();
 
-        foreach (explode("\n", $document->content) as $line => $text) {
-            if (trim($text) === '') {
-                continue;
-            }
-
-            $position = ['line' => $line, 'character' => 0];
-            $usages = 0;
-
-            foreach ($providers as $provider) {
-                $usages += count($provider->get($document, $position));
-            }
-
-            if ($usages === 0) {
-                continue;
-            }
-
+        foreach ($usages as $line => $count) {
             $lenses[] = [
                 'range' => [
                     'start' => ['line' => $line, 'character' => 0],
-                    'end'   => ['line' => $line, 'character' => mb_strlen($text)],
+                    'end'   => ['line' => $line, 'character' => mb_strlen($lines[$line] ?? '')],
                 ],
                 'command' => [
-                    'title'     => $usages === 1 ? '1 usage' : "{$usages} usages",
+                    'title'     => $count === 1 ? '1 usage' : "{$count} usages",
                     'command'   => 'laravel.showUsages',
-                    'arguments' => [$document->uri, $position],
+                    'arguments' => [$document->uri, ['line' => $line, 'character' => 0]],
                 ],
             ];
-
-            $request->cancelIfRequested();
         }
 
         return JsonRpcResponse::result($request->id(), $lenses);
