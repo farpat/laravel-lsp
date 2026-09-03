@@ -29,11 +29,34 @@ class DispatchedEvents
     ];
 
     /**
+     * The event each written name resolves to, keyed by document and name.
+     *
+     * @var array<string, string|null>
+     */
+    protected array $resolved = [];
+
+    /**
      * Create a new dispatched events instance.
      */
     public function __construct(
         protected Project $project,
     ) {}
+
+    /**
+     * Get every event dispatched in the document.
+     *
+     * @return array<int, array{event: string, range: array<string, array<string, int>>}>
+     */
+    public function in(Document $document): array
+    {
+        $sites = [];
+
+        foreach (array_keys($document->lines()) as $line) {
+            array_push($sites, ...$this->on($document, $line));
+        }
+
+        return $sites;
+    }
 
     /**
      * Get the event dispatched at the given position, with the range of its name.
@@ -62,7 +85,7 @@ class DispatchedEvents
      */
     protected function on(Document $document, int $line): array
     {
-        $text = explode("\n", $document->content)[$line] ?? null;
+        $text = $document->lines()[$line] ?? null;
 
         if (!is_string($text)) {
             return [];
@@ -105,6 +128,14 @@ class DispatchedEvents
      * dispatched nearby is left alone.
      */
     protected function resolve(Document $document, string $written): ?string
+    {
+        return $this->resolved[$document->uri . ' ' . $written] ??= $this->resolveOnce($document, $written);
+    }
+
+    /**
+     * Read the imports and the namespace of the document to resolve the given name.
+     */
+    protected function resolveOnce(Document $document, string $written): ?string
     {
         $events = $this->project->index->events();
 
