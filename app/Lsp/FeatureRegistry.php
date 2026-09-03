@@ -43,6 +43,7 @@ use App\Lsp\Features\Env\EnvCompletionProvider;
 use App\Lsp\Features\Env\EnvDiagnosticProvider;
 use App\Lsp\Features\Env\EnvHoverProvider;
 use App\Lsp\Features\Env\EnvLinkProvider;
+use App\Lsp\Features\Events\EventHoverProvider;
 use App\Lsp\Features\Inertia\InertiaCodeActionProvider;
 use App\Lsp\Features\Inertia\InertiaCompletionProvider;
 use App\Lsp\Features\Inertia\InertiaDiagnosticProvider;
@@ -137,6 +138,7 @@ class FeatureRegistry
         CommandHoverProvider::class,
         ConfigHoverProvider::class,
         EnvHoverProvider::class,
+        EventHoverProvider::class,
         InertiaHoverProvider::class,
         LivewireComponentHoverProvider::class,
         MiddlewareHoverProvider::class,
