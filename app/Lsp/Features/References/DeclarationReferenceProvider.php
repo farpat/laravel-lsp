@@ -93,13 +93,45 @@ abstract class DeclarationReferenceProvider implements ReferenceProvider
 
         $declared = [];
 
-        foreach (explode("\n", $document->content) as $line => $text) {
+        foreach ($document->lines() as $line => $text) {
             if (preg_match($this->declaration(), $text, $found) === 1) {
                 $declared[$line] = $found[1];
             }
         }
 
         return $declared;
+    }
+
+    /**
+     * Get how many times each declaration of the document is used, keyed by its line.
+     *
+     * Every declaration of the file is answered in a single pass over the project: asking
+     * line by line means walking every file again for each of them, which a file holding
+     * a hundred routes turns into a hundred walks.
+     *
+     * @return array<int, int>
+     */
+    public function counts(Document $document): array
+    {
+        $declared = $this->declaredLines($document);
+
+        if ($declared === []) {
+            return [];
+        }
+
+        $names = array_values(array_unique($declared));
+        $found = array_fill_keys($names, 0);
+        $pattern = $this->usage(implode('|', array_map(fn (string $name): string => preg_quote($name, '/'), $names)));
+
+        foreach ($this->index->search($pattern, $names) as $match) {
+            $used = mb_substr($match['text'], $match['character'], $match['length']);
+
+            if (isset($found[$used])) {
+                $found[$used]++;
+            }
+        }
+
+        return array_filter(array_map(fn (string $name): int => $found[$name], $declared));
     }
 
     /**
@@ -117,7 +149,7 @@ abstract class DeclarationReferenceProvider implements ReferenceProvider
      */
     protected function nameAt(Document $document, array $position): ?string
     {
-        $line = explode("\n", $document->content)[$position['line'] ?? -1] ?? null;
+        $line = $document->lines()[$position['line'] ?? -1] ?? null;
 
         if (!is_string($line) || preg_match($this->declaration(), $line, $found) !== 1) {
             return null;

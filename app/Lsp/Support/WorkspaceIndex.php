@@ -67,17 +67,20 @@ class WorkspaceIndex
     /**
      * Find every line matching the given pattern.
      *
-     * The needle is looked for first: running a regular expression over a whole project
-     * costs far more than rejecting the files that cannot match at all.
+     * The needles are looked for first: running a regular expression over a whole project
+     * costs far more than rejecting the files that cannot match at all. A file is read as
+     * soon as it holds one of them.
      *
+     * @param  string|array<int, string>  $needles
      * @return Collection<int, array{path: string, line: int, character: int, length: int, text: string}>
      */
-    public function search(string $pattern, string $needle): Collection
+    public function search(string $pattern, string|array $needles): Collection
     {
         $matches = collect();
+        $needles = is_array($needles) ? $needles : [$needles];
 
         foreach ($this->files() as $path => $content) {
-            if (!str_contains($content, $needle)) {
+            if (!$this->holdsAny($content, $needles)) {
                 continue;
             }
 
@@ -99,6 +102,22 @@ class WorkspaceIndex
         }
 
         return $matches;
+    }
+
+    /**
+     * Determine if the given content holds one of the needles.
+     *
+     * @param  array<int, string>  $needles
+     */
+    protected function holdsAny(string $content, array $needles): bool
+    {
+        foreach ($needles as $needle) {
+            if (str_contains($content, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
