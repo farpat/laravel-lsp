@@ -6,6 +6,7 @@ namespace App\Lsp;
 
 use App\Lsp\Contracts\CodeActionProvider;
 use App\Lsp\Contracts\CompletionProvider;
+use App\Lsp\Contracts\DefinitionProvider;
 use App\Lsp\Contracts\DiagnosticProvider;
 use App\Lsp\Contracts\FileWatcher;
 use App\Lsp\Contracts\HoverProvider;
@@ -96,6 +97,10 @@ use App\Lsp\Features\Views\ViewContentCompletionProvider;
 use App\Lsp\Features\Views\ViewDiagnosticProvider;
 use App\Lsp\Features\Views\ViewHoverProvider;
 use App\Lsp\Features\Views\ViewLinkProvider;
+use App\Lsp\Features\ViewVariables\ViewVariableCompletionProvider;
+use App\Lsp\Features\ViewVariables\ViewVariableDefinitionProvider;
+use App\Lsp\Features\ViewVariables\ViewVariableKeyCompletionProvider;
+use App\Lsp\Features\ViewVariables\ViewVariableMemberCompletionProvider;
 use App\Lsp\Watchers\DataProviderWatcher;
 use App\Lsp\Watchers\PestHelperWatcher;
 use App\Lsp\Watchers\WorkspaceIndexWatcher;
@@ -158,6 +163,9 @@ class FeatureRegistry
      * @var array<int, class-string<CompletionProvider>>
      */
     public array $completions = [
+        ViewVariableKeyCompletionProvider::class,
+        ViewVariableMemberCompletionProvider::class,
+        ViewVariableCompletionProvider::class,
         BladeComponentCompletionProvider::class,
         BladeDirectiveCompletionProvider::class,
         LivewireComponentCompletionProvider::class,
@@ -257,6 +265,29 @@ class FeatureRegistry
     public function hovers(): array
     {
         return $this->resolve($this->hovers);
+    }
+
+    /**
+     * Definition providers.
+     *
+     * Definitions are answered from the document links of the file, which covers a name
+     * pointing at a file. A variable a template only reads has no link to hang on, so it
+     * answers here instead.
+     *
+     * @var array<int, class-string<DefinitionProvider>>
+     */
+    public array $definitions = [
+        ViewVariableDefinitionProvider::class,
+    ];
+
+    /**
+     * Resolve definition providers.
+     *
+     * @return array<int, DefinitionProvider>
+     */
+    public function definitions(): array
+    {
+        return $this->resolve($this->definitions);
     }
 
     /**

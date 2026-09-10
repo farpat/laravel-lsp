@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Lsp\Features\References;
 
 use App\Lsp\Document;
-use App\Lsp\Support\FileUri;
+use App\Lsp\Support\ViewName;
 
 /**
  * Views, referred to by the dotted name of a Blade file.
@@ -63,22 +63,6 @@ class ViewNameReferenceProvider extends DeclarationReferenceProvider
      */
     protected function nameAt(Document $document, array $position): ?string
     {
-        $path = FileUri::of($document->uri)->path();
-
-        if (!str_ends_with($path, '.blade.php')) {
-            return null;
-        }
-
-        $relative = $this->project->uri()->relativePath($path);
-
-        foreach (['resources/views/', 'views/'] as $root) {
-            if (str_starts_with($relative, $root)) {
-                $relative = substr($relative, strlen($root));
-
-                break;
-            }
-        }
-
-        return str_replace('/', '.', substr($relative, 0, -strlen('.blade.php')));
+        return ViewName::fromUri($this->project, $document->uri);
     }
 }
