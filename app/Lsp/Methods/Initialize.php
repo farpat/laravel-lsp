@@ -74,7 +74,7 @@ final class Initialize implements Method
                     'resolveProvider' => false,
                 ],
                 'completionProvider' => [
-                    'triggerCharacters' => ['"', "'", '.', '|', 'x', '-', ':', '@'],
+                    'triggerCharacters' => ['"', "'", '.', '|', 'x', '-', ':', '@', '$', '>', '['],
                 ],
                 'codeActionProvider' => [
                     'codeActionKinds' => ['quickfix'],
