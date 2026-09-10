@@ -108,11 +108,16 @@ class WorkspaceIndex
     }
 
     /**
-     * Find every line matching the given pattern.
+     * Find every match of the given pattern.
      *
      * The needles are looked for first: running a regular expression over a whole project
      * costs far more than rejecting the files that cannot match at all. A file is read as
      * soon as it holds one of them.
+     *
+     * The pattern is run over the whole file, never line by line: a call is often written
+     * across several lines, and `URL::temporarySignedRoute(\n    'checkout.pay',` is a
+     * usage like any other. Reading one line at a time made those invisible, so a route
+     * only ever reached from a wrapped call was counted as unused.
      *
      * @param  string|array<int, string>  $needles
      * @return Collection<int, array{path: string, line: int, character: int, length: int, text: string}>
@@ -127,20 +132,24 @@ class WorkspaceIndex
                 continue;
             }
 
-            foreach (explode("\n", $content) as $number => $text) {
-                if (preg_match_all($pattern, $text, $found, PREG_OFFSET_CAPTURE) === 0) {
-                    continue;
-                }
+            if (preg_match_all($pattern, $content, $found, PREG_OFFSET_CAPTURE) === 0) {
+                continue;
+            }
 
-                foreach ($found[1] ?? [] as [$value, $offset]) {
-                    $matches->push([
-                        'path'      => $path,
-                        'line'      => $number,
-                        'character' => mb_strlen(substr($text, 0, $offset)),
-                        'length'    => mb_strlen((string) $value),
-                        'text'      => $text,
-                    ]);
-                }
+            $lines = explode("\n", $content);
+
+            foreach ($found[1] ?? [] as [$value, $offset]) {
+                $before = substr($content, 0, $offset);
+                $number = substr_count($before, "\n");
+                $lineStart = strrpos($before, "\n");
+
+                $matches->push([
+                    'path'      => $path,
+                    'line'      => $number,
+                    'character' => mb_strlen(substr($before, $lineStart === false ? 0 : $lineStart + 1)),
+                    'length'    => mb_strlen((string) $value),
+                    'text'      => $lines[$number] ?? '',
+                ]);
             }
         }
 
