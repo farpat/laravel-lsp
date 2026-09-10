@@ -6,6 +6,7 @@ namespace App\Lsp\Data;
 
 use App\Lsp\Contracts\DataProvider;
 use App\Lsp\Project;
+use App\Lsp\Support\EnvFile;
 use Illuminate\Support\Collection;
 
 class Env implements DataProvider
@@ -35,25 +36,6 @@ class Env implements DataProvider
      */
     public function get(): Collection
     {
-        $path = $this->project->path('.env');
-
-        if (!is_file($path)) {
-            return collect();
-        }
-
-        return collect(explode("\n", (string) file_get_contents($path)))
-            ->map(fn (string $line, int $index): array => [
-                'line'       => trim($line),
-                'lineNumber' => $index + 1,
-            ])
-            ->reject(fn (array $item): bool => $item['line'] === '' || str_starts_with($item['line'], '#'))
-            ->mapWithKeys(function (array $item): array {
-                [$key, $value] = array_pad(explode('=', $item['line'], 2), 2, '');
-
-                return [trim($key) => [
-                    'value'      => trim($value),
-                    'lineNumber' => $item['lineNumber'],
-                ]];
-            });
+        return EnvFile::read($this->project->path('.env'));
     }
 }
