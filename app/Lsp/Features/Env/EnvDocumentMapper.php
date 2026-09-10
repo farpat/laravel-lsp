@@ -81,7 +81,7 @@ class EnvDocumentMapper extends DocumentMapper
     {
         $value = $argument->stringValue();
 
-        if ($value === null || $this->find($argument) !== null) {
+        if ($value === null || $this->find($argument) !== null || $this->declaredInExample($value)) {
             return [];
         }
 
@@ -114,6 +114,18 @@ class EnvDocumentMapper extends DocumentMapper
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * Determine if the example file declares the given variable.
+     *
+     * `.env.example` is where a project writes down which variables exist. One listed
+     * there but left unset locally is deliberate, not a mistake: only a name nobody
+     * declares anywhere is worth reporting.
+     */
+    protected function declaredInExample(string $name): bool
+    {
+        return $this->project->index->envExample()->has($name);
     }
 
     /**

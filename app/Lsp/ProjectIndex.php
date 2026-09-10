@@ -15,6 +15,7 @@ use App\Lsp\Data\Controllers;
 use App\Lsp\Data\CustomBladeDirectives;
 use App\Lsp\Data\DebugInfo;
 use App\Lsp\Data\Env;
+use App\Lsp\Data\EnvExample;
 use App\Lsp\Data\Events;
 use App\Lsp\Data\FormRequests;
 use App\Lsp\Data\InertiaViews;
@@ -49,6 +50,7 @@ class ProjectIndex
         'customBladeDirectives' => CustomBladeDirectives::class,
         'debugInfo' => DebugInfo::class,
         'env' => Env::class,
+        'envExample' => EnvExample::class,
         'events' => Events::class,
         'formRequests' => FormRequests::class,
         'inertiaViews' => InertiaViews::class,
@@ -169,6 +171,14 @@ class ProjectIndex
      * Get the form requests provider, keyed by class name.
      */
     public function formRequests(): Collection
+    {
+        return $this->get(__FUNCTION__);
+    }
+
+    /**
+     * Get the provider of the variables the example env file declares.
+     */
+    public function envExample(): Collection
     {
         return $this->get(__FUNCTION__);
     }
