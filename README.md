@@ -148,6 +148,11 @@ Every feature option is a boolean that defaults to `true`. Set an option to `fal
 | Storage disks         | `storageCompletion`           | `storageDiagnostics`          | —                        | `storageLink`           | —                 |
 | Translations          | `translationCompletion`       | `translationDiagnostics`      | `translationHover`       | `translationLink`       | —                 |
 | Views                 | `viewCompletion`              | `viewDiagnostics`             | `viewHover`              | `viewLink`              | —                 |
+| View variables        | `viewVariableCompletion`      | —                             | —                        | —                       | —                 |
+
+`viewVariableCompletion` also answers `textDocument/definition` for a variable of a
+template: a Blade file declares nothing, so the call sites handing the variable over are
+what a jump can land on.
 
 ### Reference Options
 

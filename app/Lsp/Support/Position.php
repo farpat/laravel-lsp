@@ -34,6 +34,22 @@ class Position
     }
 
     /**
+     * Get the position an offset points at in the given text.
+     *
+     * @return array{line: int, character: int}
+     */
+    public static function fromOffset(string $text, int $offset): array
+    {
+        $before = substr($text, 0, $offset);
+        $lineStart = strrpos($before, "\n");
+
+        return [
+            'line'      => substr_count($before, "\n"),
+            'character' => mb_strlen(substr($before, $lineStart === false ? 0 : $lineStart + 1)),
+        ];
+    }
+
+    /**
      * Determine if the value is an LSP position.
      *
      * @param  array<string, mixed>  $position

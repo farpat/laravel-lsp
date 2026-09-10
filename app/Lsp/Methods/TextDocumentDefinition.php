@@ -59,6 +59,12 @@ class TextDocumentDefinition implements Method
             $locationLinks[] = $this->locationLink($link, $range);
         }
 
+        foreach ($this->features->definitions() as $provider) {
+            array_push($locationLinks, ...$provider->get($document, $position));
+
+            $request->cancelIfRequested();
+        }
+
         return JsonRpcResponse::result($request->id(), $locationLinks);
     }
 
