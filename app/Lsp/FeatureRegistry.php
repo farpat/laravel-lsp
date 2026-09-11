@@ -68,7 +68,6 @@ use App\Lsp\Features\Paths\PathLinkProvider;
 use App\Lsp\Features\References\CommandReferenceProvider;
 use App\Lsp\Features\References\ConfigReferenceProvider;
 use App\Lsp\Features\References\EnvReferenceProvider;
-use App\Lsp\Features\References\ClassReferenceProvider;
 use App\Lsp\Features\References\MiddlewareReferenceProvider;
 use App\Lsp\Features\References\TranslationKeyReferenceProvider;
 use App\Lsp\Features\References\ViewNameReferenceProvider;
@@ -303,7 +302,6 @@ class FeatureRegistry
         ViewNameReferenceProvider::class,
         TranslationKeyReferenceProvider::class,
         MiddlewareReferenceProvider::class,
-        ClassReferenceProvider::class,
     ];
 
     /**

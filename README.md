@@ -170,7 +170,6 @@ what a jump can land on.
 | Env variables    | `envReferences`            | `NAME=value` in a `.env` file                    |
 | Artisan commands | `commandReferences`        | the `$signature` of a command                    |
 | Middleware       | `middlewareReferences`     | an alias of `$middleware->alias([...])`          |
-| Classes          | `classReferences`          | a class, counted where it is built or dispatched |
 
 `usagesCodeLens` writes the same count above every declaration of an open file, so a file says by itself what is still read.
 
