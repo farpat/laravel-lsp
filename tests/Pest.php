@@ -1,5 +1,10 @@
 <?php
 
+use App\Lsp\Project;
+use App\Lsp\ProjectIndex;
+use App\Lsp\ScriptRunner;
+use App\Lsp\Support\FileUri;
+use App\Lsp\Support\WorkspaceIndex;
 use Tests\TestCase;
 
 /*
@@ -13,7 +18,9 @@ use Tests\TestCase;
 |
 */
 
-uses(TestCase::class)->in('Unit');
+uses(TestCase::class)
+    ->afterEach(fn () => exec('rm -rf ' . escapeshellarg(sys_get_temp_dir()) . '/lsp-project-*'))
+    ->in('Unit');
 
 /*
 |--------------------------------------------------------------------------
@@ -41,7 +48,27 @@ uses(TestCase::class)->in('Unit');
 |
 */
 
-// function something(): void
-// {
-//     // ..
-// }
+/**
+ * Build a throwaway project holding the given files, keyed by relative path.
+ *
+ * @param  array<string, string>  $files
+ * @return array{project: Project, index: WorkspaceIndex, path: string}
+ */
+function throwawayProject(array $files): array
+{
+    $path = sys_get_temp_dir() . '/lsp-project-' . uniqid();
+
+    foreach ($files as $name => $content) {
+        @mkdir(dirname($path . '/' . $name), 0777, true);
+        file_put_contents($path . '/' . $name, $content);
+    }
+
+    $project = new Project(
+        FileUri::fromPath($path),
+        [],
+        new ProjectIndex(app()),
+        new ScriptRunner($path, ['php']),
+    );
+
+    return ['project' => $project, 'index' => new WorkspaceIndex($project), 'path' => $path];
+}

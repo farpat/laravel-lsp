@@ -161,15 +161,15 @@ what a jump can land on.
 
 `textDocument/references` answers from a declaration: put the cursor on the line that declares a name, and the server lists where the project uses it. Each source reads its own kind of declaration, and each one can be turned off on its own.
 
-| Source           | Option                     | Declaration read on the line                     |
-| ---------------- | -------------------------- | ------------------------------------------------ |
-| Route names      | `routeNameReferences`      | `->name('orders.index')`                         |
-| Views            | `viewNameReferences`       | a Blade file, by its own path                    |
-| Translation keys | `translationKeyReferences` | a key of a translation file                      |
-| Config keys      | `configReferences`         | a top level key of a file in `config/`           |
-| Env variables    | `envReferences`            | `NAME=value` in a `.env` file                    |
-| Artisan commands | `commandReferences`        | the `$signature` of a command                    |
-| Middleware       | `middlewareReferences`     | an alias of `$middleware->alias([...])`          |
+| Source           | Option                     | Declaration read on the line                       |
+| ---------------- | -------------------------- | -------------------------------------------------- |
+| Route names      | `routeNameReferences`      | `->name('orders.index')`                           |
+| Views            | `viewNameReferences`       | a Blade file, by its own path                      |
+| Translation keys | `translationKeyReferences` | a key of a file in `lang/`, nested ones included   |
+| Config keys      | `configReferences`         | a key of a file in `config/`, nested ones included |
+| Env variables    | `envReferences`            | `NAME=value` in a `.env` file                      |
+| Artisan commands | `commandReferences`        | the `$signature` of a command                      |
+| Middleware       | `middlewareReferences`     | an alias of `$middleware->alias([...])`            |
 
 `usagesCodeLens` writes the same count above every declaration of an open file, so a file says by itself what is still read.
 

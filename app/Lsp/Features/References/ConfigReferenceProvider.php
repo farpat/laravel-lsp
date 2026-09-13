@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace App\Lsp\Features\References;
 
 use App\Lsp\Document;
-use App\Lsp\Support\FileUri;
 
 /**
  * Config keys, declared as an array key of a file in `config/`.
  */
-class ConfigReferenceProvider extends DeclarationReferenceProvider
+class ConfigReferenceProvider extends ArrayKeyReferenceProvider
 {
     /**
      * Get the setting that turns this source off.
@@ -18,14 +17,6 @@ class ConfigReferenceProvider extends DeclarationReferenceProvider
     protected function setting(): string
     {
         return 'configReferences';
-    }
-
-    /**
-     * Get the pattern recognising a declaration, capturing the name.
-     */
-    protected function declaration(): string
-    {
-        return '/^\s*[\'"]([\w.-]+)[\'"]\s*=>/';
     }
 
     /**
@@ -37,23 +28,16 @@ class ConfigReferenceProvider extends DeclarationReferenceProvider
     }
 
     /**
-     * Get the config key declared on the line at the given position.
+     * Get the first segment of the keys the document declares, from its path.
      *
-     * A key is read as `config('app.name')`, so the file it sits in is part of its name.
-     * Only a top level key is recognised: a nested one would need the keys it is written
-     * under, which reading a single line cannot give.
-     *
-     * @param  array<string, mixed>  $position
+     * A key is read as `config('app.name')`: the file is the first segment, and a file
+     * in a sub directory of `config/` is read through it, `config('foo.bar.key')`.
      */
-    protected function nameAt(Document $document, array $position): ?string
+    protected function prefix(Document $document): ?string
     {
-        $key = parent::nameAt($document, $position);
+        $segments = $this->segmentsUnder($document, 'config');
 
-        if ($key === null) {
-            return null;
-        }
-
-        return basename(FileUri::of($document->uri)->path(), '.php') . '.' . $key;
+        return $segments === null ? null : implode('.', $segments);
     }
 
     /**

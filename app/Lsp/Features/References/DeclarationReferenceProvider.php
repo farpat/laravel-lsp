@@ -87,19 +87,10 @@ abstract class DeclarationReferenceProvider implements ReferenceProvider
      */
     public function declaredLines(Document $document): array
     {
-        if (!$this->enabledFor($document) || $this->declaration() === '') {
-            return [];
-        }
-
-        $declared = [];
-
-        foreach ($document->lines() as $line => $text) {
-            if (preg_match($this->declaration(), $text, $found) === 1) {
-                $declared[$line] = $found[1];
-            }
-        }
-
-        return $declared;
+        return array_map(
+            fn (array $declaration): string => $declaration['name'],
+            $this->declarations($document),
+        );
     }
 
     /**
@@ -149,12 +140,39 @@ abstract class DeclarationReferenceProvider implements ReferenceProvider
      */
     protected function nameAt(Document $document, array $position): ?string
     {
-        $line = $document->lines()[$position['line'] ?? -1] ?? null;
+        return $this->declarations($document)[$position['line'] ?? -1]['name'] ?? null;
+    }
 
-        if (!is_string($line) || preg_match($this->declaration(), $line, $found) !== 1) {
-            return null;
+    /**
+     * Get the declarations of the document, keyed by the line declaring them.
+     *
+     * Each one says where its name is written on the line, so a click on the name can be
+     * told apart from a click elsewhere on the line.
+     *
+     * @return array<int, array{name: string, character: int, length: int}>
+     */
+    protected function declarations(Document $document): array
+    {
+        if (!$this->enabledFor($document) || $this->declaration() === '') {
+            return [];
         }
 
-        return $found[1];
+        $declarations = [];
+
+        foreach ($document->lines() as $line => $text) {
+            if (preg_match($this->declaration(), $text, $found, PREG_OFFSET_CAPTURE) !== 1) {
+                continue;
+            }
+
+            [$name, $offset] = $found[1];
+
+            $declarations[$line] = [
+                'name'      => $name,
+                'character' => mb_strlen(substr($text, 0, $offset)),
+                'length'    => mb_strlen($name),
+            ];
+        }
+
+        return $declarations;
     }
 }
