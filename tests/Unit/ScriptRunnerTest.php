@@ -1,5 +1,6 @@
 <?php
 
+use App\Lsp\Exceptions\ScriptFailedException;
 use App\Lsp\ScriptRunner;
 use Symfony\Component\Process\Process;
 
@@ -116,6 +117,28 @@ test('the bootstrap resolves the project inside the PHP environment', function (
         expect(json_decode($process->getOutput(), true))->toBe([realpath($runtime), true]);
     } finally {
         scriptRunnerCleanup($host, $runtime);
+    }
+});
+
+test('a script whose process fails throws with its exit code and error output', function () {
+    $root = scriptRunnerProject('failing');
+
+    try {
+        expect(fn () => scriptRunnerFor($root)->json('fwrite(STDERR, "php: not found"); exit(127);'))
+            ->toThrow(fn (ScriptFailedException $e) => expect($e->getMessage())->toContain('[127]', 'php: not found'));
+    } finally {
+        scriptRunnerCleanup($root);
+    }
+});
+
+test('a script that prints something other than JSON throws', function () {
+    $root = scriptRunnerProject('not-json');
+
+    try {
+        expect(fn () => scriptRunnerFor($root)->json('echo "Warning: something";'))
+            ->toThrow(ScriptFailedException::class, 'Warning: something');
+    } finally {
+        scriptRunnerCleanup($root);
     }
 });
 
