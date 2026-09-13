@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Lsp\Listeners;
 
+use App\Lsp\Contracts\ExceptionHandler;
 use App\Lsp\Contracts\Listener;
 use App\Lsp\Document;
 use App\Lsp\DocumentManager;
+use App\Lsp\Exceptions\ScriptFailedException;
 use App\Lsp\FeatureRegistry;
 use App\Lsp\Server;
 use App\Lsp\Transport\JsonRpcRequest;
@@ -20,6 +22,7 @@ class PublishDiagnostics implements Listener
         protected Server $server,
         protected DocumentManager $documents,
         protected FeatureRegistry $features,
+        protected ExceptionHandler $exceptions,
     ) {}
 
     /**
@@ -46,7 +49,13 @@ class PublishDiagnostics implements Listener
         $diagnostics = [];
 
         foreach ($this->features->diagnostics() as $provider) {
-            array_push($diagnostics, ...$provider->get($document));
+            try {
+                array_push($diagnostics, ...$provider->get($document));
+            } catch (ScriptFailedException $e) {
+                // A project that cannot be read has no "not found" to report:
+                // the other providers still publish theirs.
+                $this->exceptions->report($e);
+            }
         }
 
         $this->server->notify('textDocument/publishDiagnostics', [

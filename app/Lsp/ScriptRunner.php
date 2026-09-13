@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Lsp;
 
+use App\Lsp\Exceptions\ScriptFailedException;
 use Symfony\Component\Process\Process;
-use Throwable;
 
 class ScriptRunner
 {
@@ -41,19 +41,12 @@ class ScriptRunner
 
     /**
      * Run PHP code in the user's Laravel application via artisan tinker.
+     *
+     * @throws ScriptFailedException
      */
-    public function run(string $code): ?string
+    public function run(string $code): string
     {
         $script = $this->write($code);
-
-        if ($script === null) {
-            info('PHP runner error.', [
-                'message' => 'Unable to write the project script.',
-                'path'    => $this->path,
-            ]);
-
-            return null;
-        }
 
         try {
             $process = new Process($this->arguments($script), $this->path, timeout: null);
@@ -61,21 +54,10 @@ class ScriptRunner
             $process->run();
 
             if (!$process->isSuccessful()) {
-                info('PHP runner error.', [
-                    'command'  => $process->getCommandLine(),
-                    'stdout'   => $process->getOutput(),
-                    'stderr'   => $process->getErrorOutput(),
-                    'exitCode' => $process->getExitCode(),
-                ]);
-
-                return null;
+                throw ScriptFailedException::forProcess($process);
             }
 
             return $process->getOutput();
-        } catch (Throwable $e) {
-            report($e);
-
-            return null;
         } finally {
             @unlink($this->path . '/' . $script);
         }
@@ -129,18 +111,24 @@ class ScriptRunner
 
     /**
      * Write the script to a file inside the project.
+     *
+     * @throws ScriptFailedException
      */
-    protected function write(string $code): ?string
+    protected function write(string $code): string
     {
         $script = 'storage/framework/lsp-' . bin2hex(random_bytes(8)) . '.php';
         $path = $this->path . '/' . $script;
         $directory = dirname($path);
 
         if (!is_dir($directory) && !@mkdir($directory, 0777, true)) {
-            return null;
+            throw ScriptFailedException::forUnwritableScript($path);
         }
 
-        return @file_put_contents($path, $this->code($code)) === false ? null : $script;
+        if (@file_put_contents($path, $this->code($code)) === false) {
+            throw ScriptFailedException::forUnwritableScript($path);
+        }
+
+        return $script;
     }
 
     /**
@@ -169,19 +157,17 @@ class ScriptRunner
 
     /**
      * Run PHP code and decode the output as JSON.
+     *
+     * @throws ScriptFailedException
      */
     public function json(string $code): mixed
     {
         $output = $this->run($code);
 
-        if ($output === null) {
-            return null;
-        }
-
         $decoded = json_decode($output, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            return null;
+            throw ScriptFailedException::forInvalidJson($output);
         }
 
         return $decoded;
