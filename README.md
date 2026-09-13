@@ -173,6 +173,8 @@ what a jump can land on.
 
 `usagesCodeLens` writes the same count above every declaration of an open file, so a file says by itself what is still read.
 
+`usagesLink` puts a link on every declaration written out in the file, running the same `laravel.showUsages` command as the lens: a Ctrl+click on a route name, a translation key or a middleware alias opens what reads it, the way PhpStorm does.
+
 ## Supported Platforms
 
 The following platforms are supported:
