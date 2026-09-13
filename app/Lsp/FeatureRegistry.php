@@ -67,11 +67,12 @@ use App\Lsp\Features\Mix\MixLinkProvider;
 use App\Lsp\Features\Paths\PathLinkProvider;
 use App\Lsp\Features\References\CommandReferenceProvider;
 use App\Lsp\Features\References\ConfigReferenceProvider;
+use App\Lsp\Features\References\DeclarationLinkProvider;
 use App\Lsp\Features\References\EnvReferenceProvider;
 use App\Lsp\Features\References\MiddlewareReferenceProvider;
+use App\Lsp\Features\References\RouteNameReferenceProvider;
 use App\Lsp\Features\References\TranslationKeyReferenceProvider;
 use App\Lsp\Features\References\ViewNameReferenceProvider;
-use App\Lsp\Features\References\RouteNameReferenceProvider;
 use App\Lsp\Features\RequestInputs\RequestInputCompletionProvider;
 use App\Lsp\Features\RequestInputs\RequestInputDiagnosticProvider;
 use App\Lsp\Features\RequestInputs\RequestInputLinkProvider;
@@ -120,6 +121,7 @@ class FeatureRegistry
         CommandLinkProvider::class,
         ConfigLinkProvider::class,
         ControllerActionLinkProvider::class,
+        DeclarationLinkProvider::class,
         EnvLinkProvider::class,
         EventLinkProvider::class,
         InertiaLinkProvider::class,
@@ -357,7 +359,7 @@ class FeatureRegistry
     /**
      * Resolve given classes from the container.
      *
-     * @param array<int, class-string> $classes
+     * @param  array<int, class-string>  $classes
      * @return array<int, mixed>
      */
     protected function resolve(array $classes): array

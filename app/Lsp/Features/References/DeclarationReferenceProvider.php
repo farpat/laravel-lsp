@@ -144,14 +144,11 @@ abstract class DeclarationReferenceProvider implements ReferenceProvider
     }
 
     /**
-     * Get the declarations of the document, keyed by the line declaring them.
-     *
-     * Each one says where its name is written on the line, so a click on the name can be
-     * told apart from a click elsewhere on the line.
+     * Get the declarations written out in the document, keyed by the line declaring them.
      *
      * @return array<int, array{name: string, character: int, length: int}>
      */
-    protected function declarations(Document $document): array
+    public function declarations(Document $document): array
     {
         if (!$this->enabledFor($document) || $this->declaration() === '') {
             return [];

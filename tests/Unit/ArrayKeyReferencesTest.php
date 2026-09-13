@@ -1,7 +1,10 @@
 <?php
 
 use App\Lsp\Document;
+use App\Lsp\FeatureRegistry;
 use App\Lsp\Features\References\ConfigReferenceProvider;
+use App\Lsp\Features\References\DeclarationLinkProvider;
+use App\Lsp\Features\References\RouteNameReferenceProvider;
 use App\Lsp\Features\References\TranslationKeyReferenceProvider;
 use App\Lsp\Project;
 use App\Lsp\Support\FileUri;
@@ -94,4 +97,32 @@ test('counts the usages of a nested config key', function () {
         3 => 1,
         4 => 1,
     ]);
+});
+
+test('links every declaration of a file to its usages', function () {
+    $built = throwawayProject([
+        'lang/fr/notifications.php' => "<?php\n\nreturn [\n    'site_online' => 'Votre site est en ligne',\n];",
+        'routes/web.php'            => "<?php\n\nRoute::get('/', HomeController::class)->name('home');",
+    ]);
+    $registry = app(FeatureRegistry::class);
+    $registry->references = [TranslationKeyReferenceProvider::class, RouteNameReferenceProvider::class];
+    app()->instance(Project::class, $built['project']);
+    app()->instance(WorkspaceIndex::class, $built['index']);
+    $provider = new DeclarationLinkProvider($built['project'], $registry);
+
+    $document = documentOf($built, 'lang/fr/notifications.php');
+
+    expect($provider->get($document))->toBe([[
+        'range' => [
+            'start' => ['line' => 3, 'character' => 5],
+            'end'   => ['line' => 3, 'character' => 16],
+        ],
+        'target'  => 'command:laravel.showUsages?' . rawurlencode(json_encode([$document->uri, ['line' => 3, 'character' => 5]], JSON_UNESCAPED_SLASHES)),
+        'tooltip' => 'Show usages',
+    ]]);
+    expect($provider->get(documentOf($built, 'routes/web.php')))->toHaveCount(1)
+        ->and($provider->get(documentOf($built, 'routes/web.php'))[0]['range'])->toBe([
+            'start' => ['line' => 2, 'character' => 46],
+            'end'   => ['line' => 2, 'character' => 50],
+        ]);
 });

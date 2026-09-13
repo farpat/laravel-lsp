@@ -56,6 +56,11 @@ class TextDocumentDefinition implements Method
                 continue;
             }
 
+            // A link running an editor command is not a place to go.
+            if (str_starts_with((string) ($link['target'] ?? ''), 'command:')) {
+                continue;
+            }
+
             $locationLinks[] = $this->locationLink($link, $range);
         }
 

@@ -38,7 +38,7 @@ abstract class ArrayKeyReferenceProvider extends DeclarationReferenceProvider
      *
      * @return array<int, array{name: string, character: int, length: int}>
      */
-    protected function declarations(Document $document): array
+    public function declarations(Document $document): array
     {
         if (!$this->enabledFor($document)) {
             return [];
