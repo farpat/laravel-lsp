@@ -12,6 +12,9 @@ use Microsoft\PhpParser\PositionUtilities;
 use Microsoft\PhpParser\Range;
 use Stillat\BladeParser\Document\Document;
 use Stillat\BladeParser\Nodes\BaseNode;
+use Stillat\BladeParser\Nodes\Components\ComponentNode;
+use Stillat\BladeParser\Nodes\Components\ParameterAttribute;
+use Stillat\BladeParser\Nodes\Components\ParameterType;
 use Stillat\BladeParser\Nodes\DirectiveNode;
 use Stillat\BladeParser\Nodes\EchoNode;
 use Stillat\BladeParser\Nodes\EchoType;
@@ -87,6 +90,10 @@ class InlineHtmlParser extends AbstractParser
 
             if ($child instanceof EchoNode) {
                 $this->parseEchoNode($child);
+            }
+
+            if ($child instanceof ComponentNode) {
+                $this->parseComponentParameters($child);
             }
 
             $this->parseBladeContent($child);
@@ -166,6 +173,91 @@ class InlineHtmlParser extends AbstractParser
         $child->methodName = '@' . substr($child->methodName, mb_strlen($safetyPrefix));
 
         $this->items[] = $child;
+    }
+
+    /**
+     * A component tag keeps its PHP in its parameters: `:title="__('key')"` holds a bare
+     * expression, `title="{{ __('key') }}"` an echo. Neither reaches the document as a
+     * node of its own, so each one is parsed as a snippet put back at its own column.
+     */
+    protected function parseComponentParameters(ComponentNode $node): void
+    {
+        foreach ($node->parameters as $parameter) {
+            $valueNode = $parameter->valueNode;
+
+            if ($valueNode === null || $valueNode->position === null) {
+                continue;
+            }
+
+            // A raw echo leaves its parameter typed as plain, so every other value is
+            // scanned for echoes rather than only the ones the parser calls interpolated.
+            $expressions = $parameter->type === ParameterType::DynamicVariable
+                ? [[$parameter->value, $this->quoteLength($valueNode->content)]]
+                : $this->echoesIn($valueNode->content);
+
+            foreach ($expressions as [$expression, $offset]) {
+                $this->parseParameterExpression($valueNode, $expression, $offset);
+            }
+        }
+    }
+
+    /** The parameter value keeps its quotes, and the expression starts right after the opening one. */
+    private function quoteLength(string $value): int
+    {
+        return str_starts_with($value, '"') || str_starts_with($value, "'") ? 1 : 0;
+    }
+
+    /**
+     * Every echo of an attribute value with its offset in that value, `class="{{ $a }} {{ $b }}"`
+     * giving two.
+     *
+     * @return array<int, array{string, int}>
+     */
+    private function echoesIn(string $value): array
+    {
+        preg_match_all('/\{\{(.*?)\}\}|\{!!(.*?)!!\}/s', $value, $matches, PREG_OFFSET_CAPTURE | PREG_UNMATCHED_AS_NULL);
+
+        $expressions = [];
+
+        foreach (array_keys($matches[0]) as $index) {
+            [$expression, $offset] = $matches[1][$index][0] === null ? $matches[2][$index] : $matches[1][$index];
+
+            $expressions[] = [$expression, $offset];
+        }
+
+        return $expressions;
+    }
+
+    protected function parseParameterExpression(ParameterAttribute $valueNode, string $expression, int $offset): void
+    {
+        $before = substr($valueNode->content, 0, $offset);
+        $linesBefore = substr_count($before, "\n");
+
+        // A value that spans lines puts the expression on a later line, counted from that
+        // line's start rather than from the opening quote.
+        $column = $linesBefore === 0
+            ? $valueNode->position->startColumn - 1 + $offset
+            : $offset - strrpos($before, "\n") - 1;
+        $line = $valueNode->position->startLine + $linesBefore;
+
+        $snippet = "<?php\n" . str_repeat(' ', $column) . $expression . ';';
+
+        $sourceFile = (new Parser)->parseSourceFile($snippet);
+
+        Settings::$calculatePosition = function (Range $range) use ($line) {
+            $range->start->line += $this->startLine + $line - 2;
+            $range->end->line += $this->startLine + $line - 2;
+
+            return $range;
+        };
+
+        $result = Parse::parse($sourceFile);
+
+        if (count($result->children) === 0) {
+            return;
+        }
+
+        $this->items[] = $result->children[0];
     }
 
     protected function parseEchoNode(EchoNode $node)
