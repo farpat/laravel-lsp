@@ -372,11 +372,55 @@ class EloquentCompletionProvider implements CompletionProvider
             return null;
         }
 
-        $relation = $this->relationForCurrentArrayValue($context, $model);
+        $relation = $this->relationForCurrentArrayValue($context, $model)
+            ?? $this->relationNamedByFirstArgument($context, $model);
 
         return is_array($relation) && is_string($relation['related'] ?? null)
             ? $relation['related']
             : null;
+    }
+
+    /**
+     * Get the relation a method names in its first argument, as `whereHas('posts', ...)` does.
+     *
+     * @param  array<string, mixed>  $context
+     * @param  array<string, mixed>  $model
+     * @return array<string, mixed>|null
+     */
+    protected function relationNamedByFirstArgument(array $context, array $model): ?array
+    {
+        $argument = $this->arguments($context)[0]['children'][0] ?? null;
+
+        if (!is_array($argument) || ($argument['type'] ?? null) !== 'string' || !is_string($argument['value'] ?? null)) {
+            return null;
+        }
+
+        return $this->relationAtPath($model, $argument['value']);
+    }
+
+    /**
+     * Get the relation reached by following the given dotted path from the given model.
+     *
+     * @param  array<string, mixed>  $model
+     * @return array<string, mixed>|null
+     */
+    protected function relationAtPath(array $model, string $path): ?array
+    {
+        $models = collect($this->project->index->models());
+        $relation = null;
+
+        foreach (explode('.', $path) as $name) {
+            $relation = collect($model['relations'] ?? [])
+                ->first(fn (mixed $relation): bool => is_array($relation) && ($relation['name'] ?? null) === $name);
+
+            $model = is_array($relation) ? $models->get((string) ($relation['related'] ?? '')) : null;
+
+            if (!is_array($model)) {
+                return null;
+            }
+        }
+
+        return $relation;
     }
 
     /**
