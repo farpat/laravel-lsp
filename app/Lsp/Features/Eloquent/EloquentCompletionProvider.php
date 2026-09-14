@@ -232,6 +232,8 @@ class EloquentCompletionProvider implements CompletionProvider
             return null;
         }
 
+        $queried = new QueriedModel($models->all());
+
         foreach ($this->contexts($item) as $context) {
             $class = $this->className($context);
 
@@ -239,17 +241,19 @@ class EloquentCompletionProvider implements CompletionProvider
                 continue;
             }
 
-            if (!$models->has($class)) {
+            $model = $queried->ofClass($class);
+
+            if ($model === null) {
                 return null;
             }
 
             $contextMethod = $this->methodName($context);
 
             if ($contextMethod === null || !in_array($contextMethod, $this->relationMethods, true)) {
-                return $class;
+                return $queried->of($class, $context['chain'] ?? [])['class'] ?? null;
             }
 
-            $related = $this->relatedModelClass($context, $models->get($class));
+            $related = $this->relatedModelClass($context, $model);
 
             if ($related !== null) {
                 return $related;

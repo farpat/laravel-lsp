@@ -95,7 +95,8 @@ class EloquentAttributeDocumentMapper extends DocumentMapper
      */
     protected function toLinks(DetectedArgument $argument): array
     {
-        $model = $this->modelQueriedBy($argument->item()['className'] ?? null);
+        $item = $argument->item();
+        $model = (new QueriedModel($this->models()))->of($item['className'] ?? null, $item['chain'] ?? []);
 
         if ($model === null) {
             return [];
@@ -152,22 +153,6 @@ class EloquentAttributeDocumentMapper extends DocumentMapper
         $owner = collect($this->models())->first(fn (array $candidate): bool => ($candidate['table'] ?? null) === $table);
 
         return [$owner, $column];
-    }
-
-    /**
-     * Get the model a call on the given class queries: the model itself, or its builder.
-     *
-     * @return array<string, mixed>|null
-     */
-    protected function modelQueriedBy(?string $className): ?array
-    {
-        if ($className === null) {
-            return null;
-        }
-
-        return collect($this->models())->first(
-            fn (array $model): bool => ($model['class'] ?? null) === $className || ($model['builder'] ?? null) === $className,
-        );
     }
 
     /**

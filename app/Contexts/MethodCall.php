@@ -10,6 +10,13 @@ class MethodCall extends AbstractContext
 
     public ?string $className = null;
 
+    /**
+     * The methods called on the receiver before this one, outermost first.
+     *
+     * @var array<int, string>
+     */
+    public array $chain = [];
+
     public Arguments $arguments;
 
     public function init()
@@ -28,6 +35,7 @@ class MethodCall extends AbstractContext
         return [
             'methodName' => $this->methodName,
             'className'  => $this->className,
+            'chain'      => $this->chain,
             'arguments'  => $this->arguments->toArray(),
         ];
     }

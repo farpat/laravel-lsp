@@ -91,6 +91,9 @@ function eloquentModels(): array
                 ['name' => 'id'],
                 ['name' => 'name'],
             ],
+            'relations' => [
+                ['name' => 'accountDeletions', 'type' => 'HasMany', 'related' => 'App\\Models\\AccountDeletion'],
+            ],
         ],
     ];
 }
@@ -259,4 +262,28 @@ test('a string that names no attribute is left alone', function () {
     ], eloquentModels());
 
     expect(array_column($links, 'text'))->toBe(['name']);
+});
+
+test('a call chained after a relation reads the attributes of the related model', function () {
+    $links = eloquentLinks(<<<'PHP'
+    <?php
+
+    use App\Models\Customer;
+
+    function run(Customer $customer): void
+    {
+        $customer->accountDeletions()->create(['status' => 'pending', 'name' => 'x']);
+        $customer->accountDeletions()->where('status', 'pending')->update(['closed_notified_at' => now()]);
+    }
+    PHP, [
+        'app/Models/AccountDeletion.php' => ACCOUNT_DELETION_MODEL,
+        'app/Models/Customer.php'        => CUSTOMER_MODEL,
+        'helpers/_ide_helper_models.php' => IDE_HELPER,
+    ], eloquentModels());
+
+    expect($links)->toBe([
+        ['text' => 'status', 'target' => 'helpers/_ide_helper_models.php#L6'],
+        ['text' => 'status', 'target' => 'helpers/_ide_helper_models.php#L6'],
+        ['text' => 'closed_notified_at', 'target' => 'helpers/_ide_helper_models.php#L8'],
+    ]);
 });
