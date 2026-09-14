@@ -140,6 +140,7 @@ Every feature option is a boolean that defaults to `true`. Set an option to `fal
 | Config                | `configCompletion`            | `configDiagnostics`           | `configHover`            | `configLink`            | —                 |
 | Events                | —                             | —                             | `eventListenerHover`     | `eventLink`             | `eventListenerCodeActions` |
 | Controller actions    | `controllerActionCompletion`  | `controllerActionDiagnostics` | —                        | `controllerActionLink`  | —                 |
+| Eloquent attributes   | —                             | —                             | —                        | `eloquentAttributeLink` | —                 |
 | Environment variables | `envCompletion`               | `envDiagnostics`              | `envHover`               | `envLink`               | `envViteQuickFix` |
 | Inertia               | `inertiaCompletion`           | `inertiaDiagnostics`          | `inertiaHover`           | `inertiaLink`           | —                 |
 | Livewire components   | `livewireComponentCompletion` | —                             | `livewireComponentHover` | `livewireComponentLink` | —                 |

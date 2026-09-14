@@ -128,6 +128,26 @@ class DetectedArgument
     }
 
     /**
+     * Get string keys contained by the detected array argument.
+     *
+     * @return array<int, array{value: string, range: array<string, array<string, int>>}>
+     */
+    public function stringKeys(): array
+    {
+        return $this->stringsInArray(fn (array $child): ?array => $child['key'] ?? null);
+    }
+
+    /**
+     * Get string values written without a key in the detected array argument.
+     *
+     * @return array<int, array{value: string, range: array<string, array<string, int>>}>
+     */
+    public function listStringValues(): array
+    {
+        return $this->stringsInArray(fn (array $child): ?array => ($child['key'] ?? null) === null ? $child['value'] : null);
+    }
+
+    /**
      * Get the detected string values, excluding interpolated ones.
      *
      * @return array<int, array<string, mixed>>
@@ -158,6 +178,37 @@ class DetectedArgument
         }
 
         return false;
+    }
+
+    /**
+     * Get the strings the given callback picks in each item of the detected array argument.
+     *
+     * @param  callable(array<string, mixed>): (array<string, mixed>|null)  $pick
+     * @return array<int, array{value: string, range: array<string, array<string, int>>}>
+     */
+    private function stringsInArray(callable $pick): array
+    {
+        if ($this->param['type'] !== 'array') {
+            return [];
+        }
+
+        $strings = [];
+
+        foreach ($this->param['children'] as $child) {
+            $picked = $pick($child);
+
+            if ($picked === null || $picked['type'] !== 'string') {
+                continue;
+            }
+
+            $strings[] = [
+                'value'        => $picked['value'],
+                'range'        => $this->rangeForValue($picked),
+                'interpolated' => ($picked['interpolated'] ?? false) === true,
+            ];
+        }
+
+        return $strings;
     }
 
     /**

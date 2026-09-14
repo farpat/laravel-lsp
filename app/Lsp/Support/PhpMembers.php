@@ -113,7 +113,7 @@ class PhpMembers
 
         $namespace = implode('\\', $parts);
         $declares = '/\b(?:class|interface|trait|enum)\s+' . preg_quote($shortName, '/') . '\b/';
-        $inNamespace = '/namespace\s+' . preg_quote($namespace, '/') . '\s*;/';
+        $inNamespace = '/namespace\s+' . preg_quote($namespace, '/') . '\s*[;{]/';
 
         foreach ($this->index->files() as $path => $source) {
             if (preg_match($declares, $source) !== 1) {

@@ -38,6 +38,7 @@ use App\Lsp\Features\Configs\ConfigLinkProvider;
 use App\Lsp\Features\ControllerActions\ControllerActionCompletionProvider;
 use App\Lsp\Features\ControllerActions\ControllerActionDiagnosticProvider;
 use App\Lsp\Features\ControllerActions\ControllerActionLinkProvider;
+use App\Lsp\Features\Eloquent\EloquentAttributeLinkProvider;
 use App\Lsp\Features\Eloquent\EloquentCompletionProvider;
 use App\Lsp\Features\Env\EnvCodeActionProvider;
 use App\Lsp\Features\Env\EnvCompletionProvider;
@@ -122,6 +123,7 @@ class FeatureRegistry
         ConfigLinkProvider::class,
         ControllerActionLinkProvider::class,
         DeclarationLinkProvider::class,
+        EloquentAttributeLinkProvider::class,
         EnvLinkProvider::class,
         EventLinkProvider::class,
         InertiaLinkProvider::class,
