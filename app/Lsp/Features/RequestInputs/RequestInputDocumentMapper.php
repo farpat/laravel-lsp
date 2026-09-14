@@ -298,7 +298,8 @@ class RequestInputDocumentMapper extends DocumentMapper
                 'name'  => (string) $item['key']['value'],
                 'rules' => $this->rulesToString($item['value'] ?? []),
                 // A rule is written where its key is, which is where a reader expects to land.
-                'line'  => (int) ($item['key']['start']['line'] ?? 0),
+                // The parser counts lines from zero, a link target from one.
+                'line'  => (int) ($item['key']['start']['line'] ?? 0) + 1,
             ])
             ->values()
             ->all();

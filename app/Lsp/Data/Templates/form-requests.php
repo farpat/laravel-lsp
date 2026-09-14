@@ -28,17 +28,18 @@ function lspFormRequestRules($rules): string
 
 /**
  * Reflection knows where the method is, not where each of its keys is, so the key is
- * looked up in the source lines of the method itself.
+ * looked up in the source lines of the method itself. The line is 1-based, as a link
+ * target reads it.
  */
 function lspFormRequestLine(array $source, int $start, int $end, string $key): int
 {
     for ($line = $start; $line < $end; $line++) {
         if (preg_match('/([\'"])' . preg_quote($key, '/') . '\1\s*=>/', $source[$line] ?? '')) {
-            return $line;
+            return $line + 1;
         }
     }
 
-    return $start;
+    return $start + 1;
 }
 
 function lspFormRequest(string $class): ?array
