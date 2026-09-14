@@ -39,14 +39,9 @@ class WorkspaceIndexWatcher implements FileWatcher
      */
     public function patterns(): array
     {
-        return [
-            '**/*.php',
-            '**/*.js',
-            '**/*.jsx',
-            '**/*.ts',
-            '**/*.tsx',
-            '**/*.vue',
-        ];
+        // Everything, not only the files read: a folder moved or deleted is reported once,
+        // as the folder, and the files inside it send nothing of their own.
+        return ['**'];
     }
 
     /**

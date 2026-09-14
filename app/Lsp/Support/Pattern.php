@@ -20,7 +20,38 @@ class Pattern
      */
     public static function matches(string $path, string $pattern): bool
     {
+        if (self::isFolder($path)) {
+            return self::reaches($pattern, $path);
+        }
+
         return preg_match(self::expression($pattern), self::normalize($path)) === 1;
+    }
+
+    /**
+     * Determine if the given path names a folder rather than a file.
+     *
+     * A folder moved or deleted is reported without the files it held, and a watcher
+     * cannot tell what those were: a path without an extension is taken for one.
+     */
+    protected static function isFolder(string $path): bool
+    {
+        return pathinfo($path, PATHINFO_EXTENSION) === '';
+    }
+
+    /**
+     * Determine if the pattern could match a file inside the given folder.
+     *
+     * The literal part of the pattern, before its first wildcard, is the directory it
+     * watches: `app/Http/Controllers/**\/*.php` watches `app/Http/Controllers`. A folder
+     * above or below it may hold files the pattern matches.
+     */
+    protected static function reaches(string $pattern, string $folder): bool
+    {
+        $literal = substr(self::normalize($pattern), 0, strcspn(self::normalize($pattern), '*{?['));
+        $watched = rtrim(substr($literal, 0, (int) strrpos($literal, '/')), '/') . '/';
+        $folder = rtrim(self::normalize($folder), '/') . '/';
+
+        return str_starts_with($folder, $watched) || str_starts_with($watched, $folder);
     }
 
     /**

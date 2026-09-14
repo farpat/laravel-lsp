@@ -26,3 +26,15 @@ test('matches any pattern and any path', function () {
     expect(Pattern::matchesAnyPath(['README.md', 'config/app.php'], ['config/{,*,**/*}.php']))->toBeTrue();
     expect(Pattern::matchesAnyPath(['README.md', 'src/main.rs'], ['config/{,*,**/*}.php']))->toBeFalse();
 });
+
+test('a folder matches the patterns reaching into it', function () {
+    // A folder moved or deleted is reported without its files, so the folder itself has
+    // to stand for whatever the pattern could find inside.
+    expect(Pattern::matches('app/Handlers', 'app/{,*,**/*}.php'))->toBeTrue();
+    expect(Pattern::matches('app/Http', 'app/Http/Controllers/**/*.php'))->toBeTrue();
+    expect(Pattern::matches('app/Http/Controllers/Back', 'app/Http/Controllers/**/*.php'))->toBeTrue();
+    expect(Pattern::matches('app/Handlers', '**/*Request.php'))->toBeTrue();
+
+    expect(Pattern::matches('app/Handlers', 'app/Http/Controllers/**/*.php'))->toBeFalse();
+    expect(Pattern::matches('resources/js/back', 'resources/js/Pages/{*,**/*}'))->toBeFalse();
+});

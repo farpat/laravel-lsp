@@ -82,6 +82,8 @@ class WorkspaceIndex
 
         foreach ($paths as $path) {
             if (!in_array(pathinfo($path, PATHINFO_EXTENSION), self::EXTENSIONS, true)) {
+                $this->refreshFolder($path);
+
                 continue;
             }
 
@@ -94,6 +96,27 @@ class WorkspaceIndex
             }
 
             unset($this->files[$path]);
+        }
+    }
+
+    /**
+     * Forget what a folder held, and read it again if it is still there.
+     *
+     * A folder moved or deleted is reported once, as the folder: the files inside it send
+     * nothing of their own, so whatever was read under its old name would stay forever.
+     */
+    protected function refreshFolder(string $path): void
+    {
+        $prefix = rtrim($path, '/') . '/';
+
+        foreach (array_keys($this->files ?? []) as $file) {
+            if (str_starts_with($file, $prefix)) {
+                unset($this->files[$file]);
+            }
+        }
+
+        if (is_dir($path) && !in_array(basename($path), self::EXCLUDED, true)) {
+            $this->files = [...$this->files ?? [], ...$this->read($path)];
         }
     }
 
@@ -173,13 +196,13 @@ class WorkspaceIndex
     }
 
     /**
-     * Read every project file worth searching.
+     * Read every file worth searching under the given directory, the project by default.
      *
      * @return array<string, string>
      */
-    protected function read(): array
+    protected function read(?string $base = null): array
     {
-        $base = $this->project->path();
+        $base ??= $this->project->path();
         $files = [];
 
         $directories = new \RecursiveDirectoryIterator($base, \FilesystemIterator::SKIP_DOTS);

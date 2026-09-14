@@ -18,6 +18,7 @@ function workspaceIndex(array $files): WorkspaceIndex
     mkdir($path);
 
     foreach ($files as $name => $content) {
+        @mkdir(dirname($path . '/' . $name), 0777, true);
         file_put_contents($path . '/' . $name, $content);
     }
 
@@ -33,10 +34,22 @@ function workspaceIndex(array $files): WorkspaceIndex
 
 afterEach(function () {
     foreach (glob(sys_get_temp_dir() . '/lsp-workspace-*') as $directory) {
-        array_map('unlink', glob($directory . '/*'));
-        rmdir($directory);
+        removeDirectory($directory);
     }
 });
+
+function removeDirectory(string $directory): void
+{
+    foreach (glob($directory . '/{,.}*', GLOB_BRACE) as $entry) {
+        if (in_array(basename($entry), ['.', '..'], true)) {
+            continue;
+        }
+
+        is_dir($entry) ? removeDirectory($entry) : unlink($entry);
+    }
+
+    rmdir($directory);
+}
 
 $routeUsage = '/\b(?:route|signedRoute|to_route|temporarySignedRoute)\s*\(\s*[\'"](checkout\.pay)[\'"]/';
 
@@ -77,4 +90,26 @@ test('ignores a file that never mentions the name', function () use ($routeUsage
     ]);
 
     expect($index->search($routeUsage, 'checkout.pay'))->toBeEmpty();
+});
+
+test('follows a folder moved, which is reported without the files it holds', function () use ($routeUsage) {
+    $index = workspaceIndex([
+        'app/Handler/Pay.php' => "<?php route('checkout.pay');",
+    ]);
+    $path = dirname((string) array_key_first($index->files()), 3);
+
+    expect($index->search($routeUsage, 'checkout.pay'))->toHaveCount(1);
+
+    rename($path . '/app/Handler', $path . '/app/Handlers');
+    $index->refresh([$path . '/app/Handler', $path . '/app/Handlers']);
+
+    $matches = $index->search($routeUsage, 'checkout.pay');
+
+    expect($matches)->toHaveCount(1);
+    expect($matches->first()['path'])->toBe($path . '/app/Handlers/Pay.php');
+
+    rename($path . '/app/Handlers', $path . '/app/Gone');
+    $index->refresh([$path . '/app/Handlers']);
+
+    expect($index->search($routeUsage, 'checkout.pay'))->toHaveCount(0);
 });
