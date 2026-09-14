@@ -7,6 +7,7 @@ use App\Contexts\AssignmentValue;
 use App\Contexts\MethodCall;
 use Microsoft\PhpParser\Node\Expression\CallExpression;
 use Microsoft\PhpParser\Node\Expression\MemberAccessExpression;
+use Microsoft\PhpParser\Node\Expression\ScopedPropertyAccessExpression;
 use Microsoft\PhpParser\Node\Expression\Variable;
 use Microsoft\PhpParser\Node\QualifiedName;
 
@@ -20,6 +21,7 @@ class MemberAccessExpressionParser extends AbstractParser
     public function parse(MemberAccessExpression $node)
     {
         $this->context->methodName = $node->memberName->getFullText($node->getRoot()->getFullText());
+        $this->context->chain = $this->chainBefore($node);
 
         foreach ($node->getDescendantNodes() as $child) {
             if ($child instanceof QualifiedName) {
@@ -73,6 +75,37 @@ class MemberAccessExpressionParser extends AbstractParser
         }
 
         return $this->context;
+    }
+
+    /**
+     * Get the names of the calls chained between the receiver and this member access.
+     *
+     * The class resolved for `$order->customer()->update()` is the one of `$order`, so a
+     * reader knowing what `customer()` returns needs to see it was called in between.
+     *
+     * @return array<int, string>
+     */
+    protected function chainBefore(MemberAccessExpression $node): array
+    {
+        $source = $node->getRoot()->getFullText();
+        $chain = [];
+        $receiver = $node->dereferencableExpression;
+
+        while ($receiver instanceof CallExpression) {
+            $callable = $receiver->callableExpression;
+
+            if (!($callable instanceof MemberAccessExpression) && !($callable instanceof ScopedPropertyAccessExpression)) {
+                break;
+            }
+
+            array_unshift($chain, trim($callable->memberName->getText($source)));
+
+            $receiver = $callable instanceof MemberAccessExpression
+                ? $callable->dereferencableExpression
+                : $callable->scopeResolutionQualifier;
+        }
+
+        return $chain;
     }
 
     public function initNewContext(): ?AbstractContext
