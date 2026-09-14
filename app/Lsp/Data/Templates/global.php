@@ -4,11 +4,18 @@ class LspHelper
 {
     public static function relativePath($path)
     {
-        if (!str_contains($path, base_path())) {
-            return (string) $path;
+        $path = realpath($path) ?: (string) $path;
+        $basePath = rtrim(base_path(), DIRECTORY_SEPARATOR);
+
+        if ($path === $basePath) {
+            return '';
         }
 
-        return ltrim(str_replace(base_path(), '', realpath($path) ?: $path), DIRECTORY_SEPARATOR);
+        if (!str_starts_with($path, $basePath . DIRECTORY_SEPARATOR)) {
+            return $path;
+        }
+
+        return substr($path, strlen($basePath) + 1);
     }
 
     public static function isVendor($path)
