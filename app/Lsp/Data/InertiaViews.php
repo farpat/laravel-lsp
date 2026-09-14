@@ -36,8 +36,10 @@ class InertiaViews implements DataProvider
      */
     public function parse(array $data): array
     {
-        $paths = $this->normalizePagePaths($data);
-        $extensions = $this->normalizePageExtensions($data);
+        $globbed = $this->globbedPages();
+
+        $paths = $this->normalizePagePaths($data)->merge($globbed->pluck('path'))->unique()->values();
+        $extensions = $this->normalizePageExtensions($data)->merge($globbed->pluck('extension'))->unique()->values();
 
         return [
             'views' => $paths
@@ -70,8 +72,82 @@ class InertiaViews implements DataProvider
         return [
             'resources/js/Pages/{*,**/*}',
             'resources/js/pages/{*,**/*}',
+            'resources/js/{*,**/*}.{vue,jsx,tsx,svelte,js,ts}',
             'config/{,*,**/*}.php',
         ];
+    }
+
+    /**
+     * Get the page directories the front-end entry points glob, with their extension.
+     *
+     * A page is resolved in the browser, from whatever `import.meta.glob()` the entry
+     * point hands to Inertia, so that glob is where the pages are, whatever the config
+     * says: `resources/js/back/app.ts` globbing its `Pages` directory reads its pages in
+     * `resources/js/back/Pages`.
+     *
+     * @return Collection<int, array{path: string, extension: string}>
+     */
+    protected function globbedPages(): Collection
+    {
+        $scripts = $this->project->path('resources/js');
+
+        if (!is_dir($scripts)) {
+            return collect();
+        }
+
+        return collect(Finder::create()->files()->in($scripts)->name('/\.(js|ts|jsx|tsx)$/')->exclude('node_modules'))
+            ->flatMap(function (SplFileInfo $script): array {
+                preg_match_all('/import\.meta\.glob\s*(?:<[^>]*>)?\s*\(([^)]*)\)/', (string) file_get_contents($script->getPathname()), $calls);
+
+                $pages = [];
+
+                foreach ($calls[1] as $arguments) {
+                    preg_match_all('/[\'"]([^\'"]*\*[^\'"]*)[\'"]/', $arguments, $globs);
+
+                    foreach ($globs[1] as $glob) {
+                        $page = $this->globbedPage($script, $glob);
+
+                        if ($page !== null) {
+                            $pages[] = $page;
+                        }
+                    }
+                }
+
+                return $pages;
+            })
+            ->values();
+    }
+
+    /**
+     * Get the page directory and extension a glob written in the given script points to.
+     *
+     * @return array{path: string, extension: string}|null
+     */
+    protected function globbedPage(SplFileInfo $script, string $glob): ?array
+    {
+        if (preg_match('/^(.*?)\/?\*.*\.(\w+)$/', $glob, $parts) !== 1) {
+            return null;
+        }
+
+        [, $directory, $extension] = $parts;
+
+        $path = str_starts_with($directory, '/')
+            ? $directory
+            : 'resources/js/' . str_replace('\\', '/', $script->getRelativePath()) . '/' . $directory;
+
+        $segments = [];
+
+        foreach (explode('/', $path) as $segment) {
+            if ($segment === '..') {
+                array_pop($segments);
+            } elseif ($segment !== '' && $segment !== '.') {
+                $segments[] = $segment;
+            }
+        }
+
+        $path = implode('/', $segments);
+
+        return is_dir($this->project->path($path)) ? ['path' => $path, 'extension' => $extension] : null;
     }
 
     /**
