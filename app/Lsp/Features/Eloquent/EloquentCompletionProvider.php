@@ -232,7 +232,7 @@ class EloquentCompletionProvider implements CompletionProvider
             return null;
         }
 
-        foreach ($this->contexts($item) as $context) {
+        foreach ($this->contexts($item) as $index => $context) {
             $class = $this->className($context);
 
             if (!is_string($class) || $class === 'Illuminate\\Database\\Eloquent\\Builder') {
@@ -245,7 +245,10 @@ class EloquentCompletionProvider implements CompletionProvider
 
             $contextMethod = $this->methodName($context);
 
-            if ($contextMethod === null || !in_array($contextMethod, $this->relationMethods, true)) {
+            // A relation method reached as a parent wraps the completion in a closure, so
+            // the related model is the one being queried. Reached as the call being
+            // completed, its argument names a relation of the model itself.
+            if ($index === 0 || $contextMethod === null || !in_array($contextMethod, $this->relationMethods, true)) {
                 return $class;
             }
 
