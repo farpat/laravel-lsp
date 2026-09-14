@@ -161,6 +161,16 @@ $models = new class($factory)
 
         $data['extends'] = $this->getParentClass($reflection);
 
+        // A table the connection cannot describe (a tenant database selected at runtime,
+        // a migration not run) leaves the model with what it declares itself.
+        if (!collect($data['attributes'])->contains(fn ($attrs) => ($attrs['type'] ?? null) !== null)) {
+            $data['attributes'] = collect($this->declaredAttributes($className))
+                ->merge($data['attributes'])
+                ->unique('name')
+                ->values()
+                ->all();
+        }
+
         $existingProperties = $this->collectExistingProperties($reflection);
 
         $data['attributes'] = collect($data['attributes'])
@@ -192,6 +202,38 @@ $models = new class($factory)
         return [
             $className => $data,
         ];
+    }
+
+    protected function declaredAttributes($className): array
+    {
+        try {
+            $model = new $className;
+        } catch (Exception|Throwable $e) {
+            return [];
+        }
+
+        $casts = $model->getCasts();
+        $fillable = $model->getFillable();
+        $names = collect([$model->getKeyName()])
+            ->merge($fillable)
+            ->merge(array_keys($casts))
+            ->merge($model->usesTimestamps() ? [$model->getCreatedAtColumn(), $model->getUpdatedAtColumn()] : [])
+            ->filter(fn ($name) => is_string($name) && $name !== '')
+            ->unique()
+            ->values();
+
+        return $names->map(fn ($name) => [
+            'name'       => $name,
+            'type'       => null,
+            'increments' => $name === $model->getKeyName() && $model->getIncrementing(),
+            'nullable'   => null,
+            'default'    => null,
+            'unique'     => null,
+            'fillable'   => in_array($name, $fillable, true),
+            'hidden'     => in_array($name, $model->getHidden(), true),
+            'appended'   => null,
+            'cast'       => $casts[$name] ?? null,
+        ])->all();
     }
 
     protected function getScopeParameterInfo(ReflectionParameter $parameter): array
