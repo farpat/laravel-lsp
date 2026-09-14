@@ -173,7 +173,7 @@ class EloquentCompletionProvider implements CompletionProvider
             }
 
             if (!$this->isCurrentArgumentArray($item) || $this->isFillingInArrayKey($item)) {
-                return $this->completionItems($this->relationNames($model, $item), $document, $position, 12);
+                return $this->completionItems($this->relationPaths($model, $item, $document, $position), $document, $position, 12);
             }
 
             $relation = $this->relationForCurrentArrayValue($item, $model);
@@ -234,7 +234,7 @@ class EloquentCompletionProvider implements CompletionProvider
 
         $queried = new QueriedModel($models->all());
 
-        foreach ($this->contexts($item) as $context) {
+        foreach ($this->contexts($item) as $index => $context) {
             $class = $this->className($context);
 
             if (!is_string($class) || $class === 'Illuminate\\Database\\Eloquent\\Builder') {
@@ -249,7 +249,10 @@ class EloquentCompletionProvider implements CompletionProvider
 
             $contextMethod = $this->methodName($context);
 
-            if ($contextMethod === null || !in_array($contextMethod, $this->relationMethods, true)) {
+            // A relation method reached as a parent wraps the completion in a closure, so
+            // the related model is the one being queried. Reached as the call being
+            // completed, its argument names a relation of the model itself.
+            if ($index === 0 || $contextMethod === null || !in_array($contextMethod, $this->relationMethods, true)) {
                 return $queried->of($class, $context['chain'] ?? [])['class'] ?? null;
             }
 
@@ -362,6 +365,40 @@ class EloquentCompletionProvider implements CompletionProvider
     }
 
     /**
+     * Get the relation paths reachable from what is typed, nested with dots.
+     *
+     * `with('posts.comm')` offers the relations of the post, each written from the model
+     * being queried, since the whole string is replaced.
+     *
+     * @param  array<string, mixed>  $model
+     * @param  array<string, mixed>  $item
+     * @param  array<string, mixed>  $position
+     * @return array<int, string>
+     */
+    protected function relationPaths(array $model, array $item, Document $document, array $position): array
+    {
+        $segments = explode('.', $this->typedText($document, $position));
+
+        array_pop($segments);
+
+        if ($segments === []) {
+            return $this->relationNames($model, $item);
+        }
+
+        $relation = $this->relationAtPath($model, implode('.', $segments));
+        $related = is_array($relation) ? collect($this->project->index->models())->get((string) ($relation['related'] ?? '')) : null;
+
+        if (!is_array($related)) {
+            return [];
+        }
+
+        return array_map(
+            fn (string $name): string => implode('.', $segments) . '.' . $name,
+            $this->relationNames($related, $item),
+        );
+    }
+
+    /**
      * Get the related model class for a relation method context.
      *
      * @param  array<string, mixed>  $context
@@ -373,11 +410,55 @@ class EloquentCompletionProvider implements CompletionProvider
             return null;
         }
 
-        $relation = $this->relationForCurrentArrayValue($context, $model);
+        $relation = $this->relationForCurrentArrayValue($context, $model)
+            ?? $this->relationNamedByFirstArgument($context, $model);
 
         return is_array($relation) && is_string($relation['related'] ?? null)
             ? $relation['related']
             : null;
+    }
+
+    /**
+     * Get the relation a method names in its first argument, as `whereHas('posts', ...)` does.
+     *
+     * @param  array<string, mixed>  $context
+     * @param  array<string, mixed>  $model
+     * @return array<string, mixed>|null
+     */
+    protected function relationNamedByFirstArgument(array $context, array $model): ?array
+    {
+        $argument = $this->arguments($context)[0]['children'][0] ?? null;
+
+        if (!is_array($argument) || ($argument['type'] ?? null) !== 'string' || !is_string($argument['value'] ?? null)) {
+            return null;
+        }
+
+        return $this->relationAtPath($model, $argument['value']);
+    }
+
+    /**
+     * Get the relation reached by following the given dotted path from the given model.
+     *
+     * @param  array<string, mixed>  $model
+     * @return array<string, mixed>|null
+     */
+    protected function relationAtPath(array $model, string $path): ?array
+    {
+        $models = collect($this->project->index->models());
+        $relation = null;
+
+        foreach (explode('.', $path) as $name) {
+            $relation = collect($model['relations'] ?? [])
+                ->first(fn (mixed $relation): bool => is_array($relation) && ($relation['name'] ?? null) === $name);
+
+            $model = is_array($relation) ? $models->get((string) ($relation['related'] ?? '')) : null;
+
+            if (!is_array($model)) {
+                return null;
+            }
+        }
+
+        return $relation;
     }
 
     /**
@@ -395,10 +476,7 @@ class EloquentCompletionProvider implements CompletionProvider
             return null;
         }
 
-        $relation = collect($model['relations'] ?? [])
-            ->first(fn (mixed $relation): bool => is_array($relation) && ($relation['name'] ?? null) === $relationName);
-
-        return is_array($relation) ? $relation : null;
+        return $this->relationAtPath($model, $relationName);
     }
 
     /**
@@ -646,11 +724,7 @@ class EloquentCompletionProvider implements CompletionProvider
     {
         $line = (int) $position['line'];
         $character = (int) $position['character'];
-        $text = substr(explode("\n", $document->content)[$line] ?? '', 0, $character);
-
-        preg_match('/[\\w\\d\\-_\\.\\:\\\\\/@]+$/', $text, $matches);
-
-        $start = $character - strlen($matches[0] ?? '');
+        $start = $character - strlen($this->typedText($document, $position));
 
         return [
             'start' => [
@@ -662,5 +736,19 @@ class EloquentCompletionProvider implements CompletionProvider
                 'character' => $character,
             ],
         ];
+    }
+
+    /**
+     * Get the text typed before the cursor that the completion replaces.
+     *
+     * @param  array<string, mixed>  $position
+     */
+    protected function typedText(Document $document, array $position): string
+    {
+        $text = substr(explode("\n", $document->content)[(int) $position['line']] ?? '', 0, (int) $position['character']);
+
+        preg_match('/[\\w\\d\\-_\\.\\:\\\\\/@]+$/', $text, $matches);
+
+        return $matches[0] ?? '';
     }
 }
