@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Lsp\Methods;
 
+use App\Lsp\Contracts\ExceptionHandler;
 use App\Lsp\Contracts\Method;
 use App\Lsp\DocumentManager;
+use App\Lsp\Exceptions\ScriptFailedException;
 use App\Lsp\FeatureRegistry;
 use App\Lsp\Project;
 use App\Lsp\Transport\JsonRpcRequest;
@@ -20,6 +22,7 @@ class TextDocumentCodeLens implements Method
         protected DocumentManager $documents,
         protected FeatureRegistry $features,
         protected Project $project,
+        protected ExceptionHandler $exceptions,
     ) {}
 
     /**
@@ -40,8 +43,13 @@ class TextDocumentCodeLens implements Method
         $usages = [];
 
         foreach ($this->features->references() as $provider) {
-            foreach ($provider->counts($document) as $line => $count) {
-                $usages[$line] = ($usages[$line] ?? 0) + $count;
+            try {
+                foreach ($provider->counts($document) as $line => $count) {
+                    $usages[$line] = ($usages[$line] ?? 0) + $count;
+                }
+            } catch (ScriptFailedException $e) {
+                // A project that cannot be read loses this feature, not the others.
+                $this->exceptions->report($e);
             }
 
             $request->cancelIfRequested();

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Lsp\Methods;
 
+use App\Lsp\Contracts\ExceptionHandler;
 use App\Lsp\Contracts\Method;
 use App\Lsp\DocumentManager;
+use App\Lsp\Exceptions\ScriptFailedException;
 use App\Lsp\FeatureRegistry;
 use App\Lsp\Project;
 use App\Lsp\Support\CompletionItems;
@@ -21,6 +23,7 @@ class TextDocumentCompletion implements Method
         protected DocumentManager $documents,
         protected FeatureRegistry $features,
         protected Project $project,
+        protected ExceptionHandler $exceptions,
     ) {}
 
     /**
@@ -47,7 +50,13 @@ class TextDocumentCompletion implements Method
         }
 
         foreach ($this->features->completions() as $provider) {
-            $items = $provider->get($document, $position);
+            try {
+                $items = $provider->get($document, $position);
+            } catch (ScriptFailedException $e) {
+                // A project that cannot be read loses this feature, not the others.
+                $this->exceptions->report($e);
+                $items = [];
+            }
 
             if ($items !== []) {
                 return JsonRpcResponse::result(

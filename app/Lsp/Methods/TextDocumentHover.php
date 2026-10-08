@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Lsp\Methods;
 
+use App\Lsp\Contracts\ExceptionHandler;
 use App\Lsp\Contracts\Method;
 use App\Lsp\DocumentManager;
+use App\Lsp\Exceptions\ScriptFailedException;
 use App\Lsp\FeatureRegistry;
 use App\Lsp\Project;
 use App\Lsp\Transport\JsonRpcRequest;
@@ -20,6 +22,7 @@ class TextDocumentHover implements Method
         protected DocumentManager $documents,
         protected FeatureRegistry $features,
         protected Project $project,
+        protected ExceptionHandler $exceptions,
     ) {}
 
     /**
@@ -42,7 +45,13 @@ class TextDocumentHover implements Method
         }
 
         foreach ($this->features->hovers() as $provider) {
-            $hover = $provider->get($document, $position);
+            try {
+                $hover = $provider->get($document, $position);
+            } catch (ScriptFailedException $e) {
+                // A project that cannot be read loses this feature, not the others.
+                $this->exceptions->report($e);
+                $hover = null;
+            }
 
             if ($hover !== null) {
                 return JsonRpcResponse::result($request->id(), $hover);

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Lsp\Methods;
 
 use App\Lsp\CodeActions\CodeActionContext;
+use App\Lsp\Contracts\ExceptionHandler;
 use App\Lsp\Contracts\Method;
 use App\Lsp\DocumentManager;
+use App\Lsp\Exceptions\ScriptFailedException;
 use App\Lsp\FeatureRegistry;
 use App\Lsp\Project;
 use App\Lsp\Transport\JsonRpcRequest;
@@ -21,6 +23,7 @@ class TextDocumentCodeAction implements Method
         protected DocumentManager $documents,
         protected FeatureRegistry $features,
         protected Project $project,
+        protected ExceptionHandler $exceptions,
     ) {}
 
     /**
@@ -47,7 +50,12 @@ class TextDocumentCodeAction implements Method
         $codeActionContext = new CodeActionContext($range, $context);
 
         foreach ($this->features->codeActions() as $provider) {
-            array_push($actions, ...$provider->get($document, $codeActionContext));
+            try {
+                array_push($actions, ...$provider->get($document, $codeActionContext));
+            } catch (ScriptFailedException $e) {
+                // A project that cannot be read loses this feature, not the others.
+                $this->exceptions->report($e);
+            }
 
             $request->cancelIfRequested();
         }

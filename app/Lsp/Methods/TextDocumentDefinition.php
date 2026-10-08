@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Lsp\Methods;
 
+use App\Lsp\Contracts\ExceptionHandler;
 use App\Lsp\Contracts\Method;
 use App\Lsp\Document;
 use App\Lsp\DocumentManager;
+use App\Lsp\Exceptions\ScriptFailedException;
 use App\Lsp\FeatureRegistry;
 use App\Lsp\Project;
 use App\Lsp\Support\Position;
@@ -22,6 +24,7 @@ class TextDocumentDefinition implements Method
         protected DocumentManager $documents,
         protected FeatureRegistry $features,
         protected Project $project,
+        protected ExceptionHandler $exceptions,
     ) {}
 
     /**
@@ -65,7 +68,12 @@ class TextDocumentDefinition implements Method
         }
 
         foreach ($this->features->definitions() as $provider) {
-            array_push($locationLinks, ...$provider->get($document, $position));
+            try {
+                array_push($locationLinks, ...$provider->get($document, $position));
+            } catch (ScriptFailedException $e) {
+                // A project that cannot be read loses this feature, not the others.
+                $this->exceptions->report($e);
+            }
 
             $request->cancelIfRequested();
         }
@@ -83,7 +91,12 @@ class TextDocumentDefinition implements Method
         $links = [];
 
         foreach ($this->features->links() as $provider) {
-            array_push($links, ...$provider->get($document));
+            try {
+                array_push($links, ...$provider->get($document));
+            } catch (ScriptFailedException $e) {
+                // A project that cannot be read loses this feature, not the others.
+                $this->exceptions->report($e);
+            }
 
             $request->cancelIfRequested();
         }

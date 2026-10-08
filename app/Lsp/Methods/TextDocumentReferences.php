@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Lsp\Methods;
 
+use App\Lsp\Contracts\ExceptionHandler;
 use App\Lsp\Contracts\Method;
 use App\Lsp\DocumentManager;
+use App\Lsp\Exceptions\ScriptFailedException;
 use App\Lsp\FeatureRegistry;
 use App\Lsp\Transport\JsonRpcRequest;
 use App\Lsp\Transport\JsonRpcResponse;
@@ -18,6 +20,7 @@ class TextDocumentReferences implements Method
     public function __construct(
         protected DocumentManager $documents,
         protected FeatureRegistry $features,
+        protected ExceptionHandler $exceptions,
     ) {}
 
     /**
@@ -39,7 +42,12 @@ class TextDocumentReferences implements Method
         $locations = [];
 
         foreach ($this->features->references() as $provider) {
-            array_push($locations, ...$provider->get($document, $position));
+            try {
+                array_push($locations, ...$provider->get($document, $position));
+            } catch (ScriptFailedException $e) {
+                // A project that cannot be read loses this feature, not the others.
+                $this->exceptions->report($e);
+            }
 
             $request->cancelIfRequested();
         }
