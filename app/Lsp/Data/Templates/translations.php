@@ -187,13 +187,25 @@ $translator = new class
         $inArrayKey = true;
         $arrayDepth = -1;
         $depthKeys = [];
+        $positions = [];
+        $previous = null;
 
         foreach ($tokens as $index => $token) {
+            if (!is_array($token) || !in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT])) {
+                $lastToken = $previous;
+                $previous = is_array($token) ? $token[0] : $token;
+            }
+
             if (!is_array($token)) {
                 if ($token === '[') {
+                    // An array without a key is a list item: its key is its position.
+                    if ($arrayDepth >= 0 && in_array($lastToken, ['[', ','], true)) {
+                        $depthKeys[$arrayDepth] = $positions[$arrayDepth]++;
+                    }
+
                     $inArrayKey = true;
-                    $currentIndex = 0;
                     $arrayDepth++;
+                    $positions[$arrayDepth] = 0;
                 }
 
                 if ($token === ']') {
@@ -214,9 +226,7 @@ $translator = new class
                 $nextValue = isset($nextToken[1]) ? $nextToken[1] : $nextToken;
 
                 if ($nextValue === ',' || str_contains($nextValue, "\n")) {
-                    $token[1] = $currentIndex;
-
-                    $currentIndex++;
+                    $token[1] = (string) $positions[$arrayDepth]++;
                 }
 
                 $depthKeys[$arrayDepth] = trim($token[1], '"\'');
