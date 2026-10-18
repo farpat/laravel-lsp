@@ -16,11 +16,20 @@ function lspFormRequestRules($rules): string
                 return $rule;
             }
 
-            if (is_object($rule)) {
-                return method_exists($rule, '__toString') ? (string) $rule : class_basename($rule);
+            if (!is_object($rule)) {
+                return '';
             }
 
-            return '';
+            if (!method_exists($rule, '__toString')) {
+                return class_basename($rule);
+            }
+
+            try {
+                return (string) $rule;
+            } catch (\Throwable $e) {
+                // Some rules run app code to print (ExcludeIf calls its closure): keep the name only.
+                return class_basename($rule);
+            }
         })
         ->filter()
         ->implode('|');
