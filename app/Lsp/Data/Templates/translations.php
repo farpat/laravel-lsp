@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Contracts\Translation\Loader;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\File;
@@ -87,7 +88,20 @@ $translator = new class
             return Arr::wrap($property->getValue($loader));
         }
 
-        return [];
+        // A custom loader often wraps the framework one: take the paths of the inner loader.
+        foreach ($reflection->getProperties() as $innerProperty) {
+            if (!$innerProperty->isInitialized($loader)) {
+                continue;
+            }
+
+            $inner = $innerProperty->getValue($loader);
+
+            if ($inner instanceof Loader && $inner !== $loader) {
+                return $this->getPaths($inner);
+            }
+        }
+
+        return [lang_path()];
     }
 
     public function collectFromPath(string $path, ?string $namespace = null)
