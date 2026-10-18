@@ -234,10 +234,13 @@ $translator = new class
 
     protected function getDotted($key, $lang)
     {
+        // Ask the loader, not __(): a JSON line named like the group ("errors") would win.
+        [$namespace, $group] = str_contains($key, '::') ? explode('::', $key, 2) : ['*', $key];
+
         try {
             return Arr::dot(
                 Arr::wrap(
-                    __($key, [], $lang),
+                    app('translator')->getLoader()->load($lang, $group, $namespace),
                 ),
             );
         } catch (Throwable $e) {
