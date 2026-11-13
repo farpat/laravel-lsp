@@ -145,7 +145,7 @@ class RequestInputDocumentMapper extends DocumentMapper
         }
 
         return collect($argument->stringValues())
-            ->reject(fn (array $value): bool => isset($keys[$value['value']]))
+            ->reject(fn (array $value): bool => $this->isDeclared((string) $value['value'], array_keys($keys)))
             ->map(fn (array $value): array => [
                 'range'    => $value['range'],
                 'severity' => 2,
@@ -155,6 +155,39 @@ class RequestInputDocumentMapper extends DocumentMapper
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * Determine if the input is declared by one of the rule keys.
+     *
+     * A rule on `items.*.id` also lets `items` and `items.0.id` through: a key covers
+     * its parents, and `*` stands for any one segment.
+     *
+     * @param  array<int, string>  $keys
+     */
+    protected function isDeclared(string $input, array $keys): bool
+    {
+        $inputSegments = explode('.', $input);
+
+        foreach ($keys as $key) {
+            $keySegments = array_slice(explode('.', (string) $key), 0, count($inputSegments));
+
+            if (count($keySegments) < count($inputSegments)) {
+                continue;
+            }
+
+            $matching = array_map(
+                fn (string $keySegment, string $inputSegment): bool => $keySegment === '*' || $keySegment === $inputSegment,
+                $keySegments,
+                $inputSegments,
+            );
+
+            if (!in_array(false, $matching, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
