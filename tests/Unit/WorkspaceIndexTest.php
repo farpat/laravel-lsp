@@ -113,3 +113,18 @@ test('follows a folder moved, which is reported without the files it holds', fun
 
     expect($index->search($routeUsage, 'checkout.pay'))->toHaveCount(0);
 });
+
+it('leaves out a saved file the first read skips, as a compiled view', function () use ($routeUsage) {
+    $index = workspaceIndex([
+        'app/Pay.php' => "<?php route('checkout.pay');",
+    ]);
+    $path = dirname((string) array_key_first($index->files()), 2);
+
+    expect($index->search($routeUsage, 'checkout.pay'))->toHaveCount(1);
+
+    mkdir($path . '/storage/framework/views', 0777, true);
+    file_put_contents($path . '/storage/framework/views/0a1b.php', "<?php echo route('checkout.pay');");
+    $index->refresh([$path . '/storage/framework/views/0a1b.php', $path . '/storage/framework']);
+
+    expect($index->search($routeUsage, 'checkout.pay'))->toHaveCount(1);
+});

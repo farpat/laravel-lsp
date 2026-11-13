@@ -81,6 +81,10 @@ class WorkspaceIndex
         }
 
         foreach ($paths as $path) {
+            if ($this->excluded($path)) {
+                continue;
+            }
+
             if (!in_array(pathinfo($path, PATHINFO_EXTENSION), self::EXTENSIONS, true)) {
                 $this->refreshFolder($path);
 
@@ -115,9 +119,23 @@ class WorkspaceIndex
             }
         }
 
-        if (is_dir($path) && !in_array(basename($path), self::EXCLUDED, true)) {
+        if (is_dir($path)) {
             $this->files = [...$this->files ?? [], ...$this->read($path)];
         }
+    }
+
+    /**
+     * Determine if the path lies in a directory the first read skips.
+     *
+     * A watcher reports every file, compiled views and vendor updates too. Taking them in
+     * here would count usages the first read never sees.
+     */
+    protected function excluded(string $path): bool
+    {
+        $base = rtrim($this->project->path(), '/') . '/';
+        $relative = str_starts_with($path, $base) ? substr($path, strlen($base)) : $path;
+
+        return array_intersect(explode('/', $relative), self::EXCLUDED) !== [];
     }
 
     /**
