@@ -6,6 +6,7 @@ namespace App\Lsp\Features\Events;
 
 use App\Lsp\Document;
 use App\Lsp\Project;
+use App\Lsp\Support\Position;
 
 /**
  * The events dispatched on a line of a document.
@@ -105,13 +106,13 @@ class DispatchedEvents
                     continue;
                 }
 
-                $start = mb_strlen(substr($text, 0, $offset));
+                $start = Position::countCharacters(substr($text, 0, $offset));
 
                 $sites[] = [
                     'event' => $event,
                     'range' => [
                         'start' => ['line' => $line, 'character' => $start],
-                        'end'   => ['line' => $line, 'character' => $start + mb_strlen((string) $written)],
+                        'end'   => ['line' => $line, 'character' => $start + Position::countCharacters((string) $written)],
                     ],
                 ];
             }

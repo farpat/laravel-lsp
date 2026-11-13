@@ -114,7 +114,7 @@ class ViewVariableDefinitionProvider implements DefinitionProvider
         }
 
         $start = Position::fromOffset($content, $variable->offset);
-        $end = ['line' => $start['line'], 'character' => $start['character'] + mb_strlen($variable->name)];
+        $end = ['line' => $start['line'], 'character' => $start['character'] + Position::countCharacters($variable->name)];
 
         return [
             'originSelectionRange' => $origin,
