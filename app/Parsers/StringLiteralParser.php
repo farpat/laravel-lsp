@@ -4,10 +4,12 @@ namespace App\Parsers;
 
 use App\Contexts\AbstractContext;
 use App\Contexts\StringValue;
+use App\Lsp\Support\Position;
 use App\Parser\Settings;
 use Microsoft\PhpParser\Node;
 use Microsoft\PhpParser\Node\StringLiteral;
-use Microsoft\PhpParser\PositionUtilities;
+use Microsoft\PhpParser\LineCharacterPosition;
+use Microsoft\PhpParser\Range;
 use Microsoft\PhpParser\TokenKind;
 
 class StringLiteralParser extends AbstractParser
@@ -25,11 +27,7 @@ class StringLiteralParser extends AbstractParser
         $this->context->interpolated = $this->isInterpolated($node);
 
         if (Settings::$capturePosition) {
-            $range = PositionUtilities::getRangeFromPosition(
-                $node->getStartPosition(),
-                mb_strlen($contents),
-                $node->getRoot()->getFullText(),
-            );
+            $range = $this->getRange($node, $contents);
 
             if (Settings::$calculatePosition !== null) {
                 $range = Settings::adjustPosition($range);
@@ -39,6 +37,26 @@ class StringLiteralParser extends AbstractParser
         }
 
         return $this->context;
+    }
+
+    /**
+     * Get the range of the string, from its opening quote, in UTF-16 units as LSP counts.
+     *
+     * The parser counts bytes, so `é` or an emoji before the string on the same line
+     * pushed the range to the right.
+     */
+    protected function getRange(StringLiteral $node, string $contents): Range
+    {
+        $text = $node->getRoot()->getFullText();
+        $start = Position::fromOffset($text, $node->getStartPosition());
+        $end = str_contains($contents, "\n")
+            ? Position::fromOffset($text, $node->getStartPosition() + strlen($contents))
+            : ['line' => $start['line'], 'character' => $start['character'] + Position::countCharacters($contents)];
+
+        return new Range(
+            new LineCharacterPosition($start['line'], $start['character']),
+            new LineCharacterPosition($end['line'], $end['character']),
+        );
     }
 
     /**

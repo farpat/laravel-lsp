@@ -4,6 +4,7 @@ namespace App\Parsers;
 
 use App\Contexts\AbstractContext;
 use App\Contexts\Blade;
+use App\Lsp\Support\Position;
 use App\Parser\Parse;
 use App\Parser\Settings;
 use Microsoft\PhpParser\Node\Attribute;
@@ -45,11 +46,16 @@ class InlineHtmlParser extends AbstractParser
      * Stillat\BladeParser\Document\Document::fromText treats multibyte characters
      * as indentations and spaces resulting in a miscalculated Node position.
      *
-     * This function replaces the multibyte characters with a single, placeholder character
+     * This function replaces the multibyte characters with placeholder characters,
+     * one for each UTF-16 unit: LSP counts an emoji as two characters.
      */
     private function replaceMultibyteChars(string $text, string $placeholder = '*'): string
     {
-        return preg_replace('/[^\x00-\x7F]/u', $placeholder, $text);
+        return preg_replace_callback(
+            '/[^\x00-\x7F]/u',
+            fn (array $found): string => str_repeat($placeholder, Position::countCharacters($found[0])),
+            $text,
+        );
     }
 
     public function parse(InlineHtml $node)
