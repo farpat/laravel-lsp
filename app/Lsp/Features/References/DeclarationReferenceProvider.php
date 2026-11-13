@@ -8,6 +8,7 @@ use App\Lsp\Contracts\ReferenceProvider;
 use App\Lsp\Document;
 use App\Lsp\Project;
 use App\Lsp\Support\FileUri;
+use App\Lsp\Support\Position;
 use App\Lsp\Support\WorkspaceIndex;
 
 /**
@@ -119,10 +120,8 @@ abstract class DeclarationReferenceProvider implements ReferenceProvider
         $pattern = $this->usage(implode('|', array_map(fn (string $name): string => preg_quote($name, '/'), $names)));
 
         foreach ($this->index->search($pattern, $names) as $match) {
-            $used = mb_substr($match['text'], $match['character'], $match['length']);
-
-            if (isset($found[$used])) {
-                $found[$used]++;
+            if (isset($found[$match['value']])) {
+                $found[$match['value']]++;
             }
         }
 
@@ -198,8 +197,8 @@ abstract class DeclarationReferenceProvider implements ReferenceProvider
             $declarations[] = [
                 'name'      => $name,
                 'line'      => $line,
-                'character' => mb_strlen(substr($text, 0, $offset)),
-                'length'    => mb_strlen($name),
+                'character' => Position::countCharacters(substr($text, 0, $offset)),
+                'length'    => Position::countCharacters($name),
             ];
         }
 

@@ -85,7 +85,7 @@ abstract class ArrayKeyReferenceProvider extends DeclarationReferenceProvider
                 'name'      => $prefix . '.' . implode('.', $keys),
                 'line'      => $position['line'],
                 'character' => $position['character'],
-                'length'    => mb_strlen($token->text) - 2,
+                'length'    => Position::countCharacters($token->text) - 2,
             ];
         }
 

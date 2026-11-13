@@ -142,3 +142,20 @@ test('links every declaration of a file to its usages', function () {
             'end'   => ['line' => 2, 'character' => 50],
         ]);
 });
+
+it('places a key after an emoji where the editor shows it', function () {
+    $built = throwawayProject([
+        'config/shop.php' => "<?php\n\nreturn [\n    'a' => ['😀' => 1, 'c' => 2],\n];",
+        'app/Shop.php'    => "<?php /* 😀 */ config('shop.a.c');",
+    ]);
+    $provider = new ConfigReferenceProvider($built['project'], $built['index']);
+    $document = documentOf($built, 'config/shop.php');
+
+    expect($provider->counts($document))->toBe([
+        ['line' => 3, 'character' => 24, 'count' => 1],
+    ]);
+    expect($provider->get($document, ['line' => 3, 'character' => 24])[0]['range'])->toBe([
+        'start' => ['line' => 0, 'character' => 23],
+        'end'   => ['line' => 0, 'character' => 31],
+    ]);
+});

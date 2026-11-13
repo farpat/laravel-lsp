@@ -10,6 +10,7 @@ use App\Lsp\DocumentManager;
 use App\Lsp\Exceptions\ScriptFailedException;
 use App\Lsp\FeatureRegistry;
 use App\Lsp\Project;
+use App\Lsp\Support\Position;
 use App\Lsp\Transport\JsonRpcRequest;
 use App\Lsp\Transport\JsonRpcResponse;
 
@@ -71,7 +72,7 @@ class TextDocumentCodeLens implements Method
             $lenses[] = [
                 'range' => [
                     'start' => ['line' => $line, 'character' => $character],
-                    'end'   => ['line' => $line, 'character' => mb_strlen($lines[$line] ?? '')],
+                    'end'   => ['line' => $line, 'character' => Position::countCharacters($lines[$line] ?? '')],
                 ],
                 'command' => [
                     'title'     => $count === 1 ? '1 usage' : "{$count} usages",

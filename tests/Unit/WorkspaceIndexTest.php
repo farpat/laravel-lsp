@@ -128,3 +128,15 @@ it('leaves out a saved file the first read skips, as a compiled view', function 
 
     expect($index->search($routeUsage, 'checkout.pay'))->toHaveCount(1);
 });
+
+it('counts the characters of a line in UTF-16 units, as the editor does', function () use ($routeUsage) {
+    $index = workspaceIndex([
+        'pay.php' => "<?php /* 😀 */ route('checkout.pay');",
+    ]);
+
+    expect($index->search($routeUsage, 'checkout.pay')->first())->toMatchArray([
+        'line'      => 0,
+        'character' => 22,
+        'length'    => 12,
+    ]);
+});

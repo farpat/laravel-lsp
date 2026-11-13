@@ -45,8 +45,19 @@ class Position
 
         return [
             'line'      => substr_count($before, "\n"),
-            'character' => mb_strlen(substr($before, $lineStart === false ? 0 : $lineStart + 1)),
+            'character' => self::countCharacters(substr($before, $lineStart === false ? 0 : $lineStart + 1)),
         ];
+    }
+
+    /**
+     * Count the characters of the given text the way LSP does, in UTF-16 code units.
+     *
+     * An emoji is one character for PHP but two for the editor, so a count in code
+     * points puts every range after it on the same line too far to the left.
+     */
+    public static function countCharacters(string $text): int
+    {
+        return intdiv(strlen(mb_convert_encoding($text, 'UTF-16LE', 'UTF-8')), 2);
     }
 
     /**

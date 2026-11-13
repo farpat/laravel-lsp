@@ -161,7 +161,7 @@ class WorkspaceIndex
      * only ever reached from a wrapped call was counted as unused.
      *
      * @param  string|array<int, string>  $needles
-     * @return Collection<int, array{path: string, line: int, character: int, length: int, text: string}>
+     * @return Collection<int, array{path: string, line: int, character: int, length: int, value: string, text: string}>
      */
     public function search(string $pattern, string|array $needles): Collection
     {
@@ -187,8 +187,9 @@ class WorkspaceIndex
                 $matches->push([
                     'path'      => $path,
                     'line'      => $number,
-                    'character' => mb_strlen(substr($before, $lineStart === false ? 0 : $lineStart + 1)),
-                    'length'    => mb_strlen((string) $value),
+                    'character' => Position::countCharacters(substr($before, $lineStart === false ? 0 : $lineStart + 1)),
+                    'length'    => Position::countCharacters((string) $value),
+                    'value'     => (string) $value,
                     'text'      => $lines[$number] ?? '',
                 ]);
             }

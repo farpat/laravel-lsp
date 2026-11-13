@@ -109,7 +109,7 @@ class RouteNameReferenceProvider extends DeclarationReferenceProvider
                 'name'      => $prefix . $found['name'],
                 'line'      => $position['line'],
                 'character' => $position['character'],
-                'length'    => mb_strlen($found['name']),
+                'length'    => Position::countCharacters($found['name']),
             ];
         }
 
