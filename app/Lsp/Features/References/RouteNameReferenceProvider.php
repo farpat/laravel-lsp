@@ -52,9 +52,9 @@ class RouteNameReferenceProvider extends DeclarationReferenceProvider
     }
 
     /**
-     * Get the declarations of the document, keyed by the line declaring them.
+     * Get the declarations of the document, with where each one is written.
      *
-     * @return array<int, array{name: string, character: int, length: int}>
+     * @return array<int, array{name: string, line: int, character: int, length: int}>
      */
     public function declarations(Document $document): array
     {
@@ -105,8 +105,9 @@ class RouteNameReferenceProvider extends DeclarationReferenceProvider
 
             $position = Position::fromOffset($document->content, $found['offset']);
 
-            $declarations[$position['line']] = [
+            $declarations[] = [
                 'name'      => $prefix . $found['name'],
+                'line'      => $position['line'],
                 'character' => $position['character'],
                 'length'    => mb_strlen($found['name']),
             ];

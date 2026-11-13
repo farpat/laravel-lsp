@@ -81,36 +81,40 @@ abstract class DeclarationReferenceProvider implements ReferenceProvider
     }
 
     /**
-     * Get the names the given document declares, keyed by the line declaring them.
+     * Get the names the given document declares, with where each one is written.
      *
-     * @return array<int, string>
+     * @return array<int, array{name: string, line: int, character: int}>
      */
-    public function declaredLines(Document $document): array
+    public function declaredNames(Document $document): array
     {
         return array_map(
-            fn (array $declaration): string => $declaration['name'],
+            fn (array $declaration): array => [
+                'name'      => $declaration['name'],
+                'line'      => $declaration['line'],
+                'character' => $declaration['character'],
+            ],
             $this->declarations($document),
         );
     }
 
     /**
-     * Get how many times each declaration of the document is used, keyed by its line.
+     * Get how many times each declaration of the document is used, with where it is written.
      *
      * Every declaration of the file is answered in a single pass over the project: asking
      * line by line means walking every file again for each of them, which a file holding
      * a hundred routes turns into a hundred walks.
      *
-     * @return array<int, int>
+     * @return array<int, array{line: int, character: int, count: int}>
      */
     public function counts(Document $document): array
     {
-        $declared = $this->declaredLines($document);
+        $declared = $this->declaredNames($document);
 
         if ($declared === []) {
             return [];
         }
 
-        $names = array_values(array_unique($declared));
+        $names = array_values(array_unique(array_column($declared, 'name')));
         $found = array_fill_keys($names, 0);
         $pattern = $this->usage(implode('|', array_map(fn (string $name): string => preg_quote($name, '/'), $names)));
 
@@ -122,7 +126,19 @@ abstract class DeclarationReferenceProvider implements ReferenceProvider
             }
         }
 
-        return array_filter(array_map(fn (string $name): int => $found[$name], $declared));
+        $counts = [];
+
+        foreach ($declared as $declaration) {
+            if ($found[$declaration['name']] > 0) {
+                $counts[] = [
+                    'line'      => $declaration['line'],
+                    'character' => $declaration['character'],
+                    'count'     => $found[$declaration['name']],
+                ];
+            }
+        }
+
+        return $counts;
     }
 
     /**
@@ -134,19 +150,35 @@ abstract class DeclarationReferenceProvider implements ReferenceProvider
     }
 
     /**
-     * Get the name declared on the line at the given position.
+     * Get the name declared at the given position.
+     *
+     * A line can declare more than one name, `'a' => ['b' => 1, 'c' => 2]`: the one
+     * written last before the cursor wins, the first of the line when the cursor is before
+     * them all.
      *
      * @param  array<string, mixed>  $position
      */
     protected function nameAt(Document $document, array $position): ?string
     {
-        return $this->declarations($document)[$position['line'] ?? -1]['name'] ?? null;
+        $name = null;
+
+        foreach ($this->declarations($document) as $declaration) {
+            if ($declaration['line'] !== ($position['line'] ?? -1)) {
+                continue;
+            }
+
+            if ($name === null || $declaration['character'] <= ($position['character'] ?? 0)) {
+                $name = $declaration['name'];
+            }
+        }
+
+        return $name;
     }
 
     /**
-     * Get the declarations written out in the document, keyed by the line declaring them.
+     * Get the declarations written out in the document, with where each one is written.
      *
-     * @return array<int, array{name: string, character: int, length: int}>
+     * @return array<int, array{name: string, line: int, character: int, length: int}>
      */
     public function declarations(Document $document): array
     {
@@ -163,8 +195,9 @@ abstract class DeclarationReferenceProvider implements ReferenceProvider
 
             [$name, $offset] = $found[1];
 
-            $declarations[$line] = [
+            $declarations[] = [
                 'name'      => $name,
+                'line'      => $line,
                 'character' => mb_strlen(substr($text, 0, $offset)),
                 'length'    => mb_strlen($name),
             ];

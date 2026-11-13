@@ -28,13 +28,13 @@ it('reads a route name with the name prefixes of the groups around it', function
     $provider = new RouteNameReferenceProvider($built['project'], $built['index']);
     $document = new Document((string) FileUri::fromPath($built['path'] . '/routes/web.php'), $routes);
 
-    expect($provider->declaredLines($document))->toBe([
-        2  => 'home',
-        5  => 'admin.dashboard',
-        8  => 'admin.shops.index',
-        12 => 'api.ping',
+    expect($provider->declaredNames($document))->toBe([
+        ['name' => 'home', 'line' => 2, 'character' => 46],
+        ['name' => 'admin.dashboard', 'line' => 5, 'character' => 55],
+        ['name' => 'admin.shops.index', 'line' => 8, 'character' => 70],
+        ['name' => 'api.ping', 'line' => 12, 'character' => 86],
     ]);
-    expect($provider->counts($document))->toBe([
+    expect(array_column($provider->counts($document), 'count', 'line'))->toBe([
         2 => 1,
         5 => 1,
         8 => 1,

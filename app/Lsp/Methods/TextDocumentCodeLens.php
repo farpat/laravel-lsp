@@ -44,8 +44,13 @@ class TextDocumentCodeLens implements Method
 
         foreach ($this->features->references() as $provider) {
             try {
-                foreach ($provider->counts($document) as $line => $count) {
-                    $usages[$line] = ($usages[$line] ?? 0) + $count;
+                foreach ($provider->counts($document) as $found) {
+                    $key = $found['line'] . ':' . $found['character'];
+                    $usages[$key] = [
+                        'line'      => $found['line'],
+                        'character' => $found['character'],
+                        'count'     => ($usages[$key]['count'] ?? 0) + $found['count'],
+                    ];
                 }
             } catch (ScriptFailedException $e) {
                 // A project that cannot be read loses this feature, not the others.
@@ -55,21 +60,23 @@ class TextDocumentCodeLens implements Method
             $request->cancelIfRequested();
         }
 
-        ksort($usages);
+        // A line can declare more than one name: each one keeps its own lens, in the
+        // order they are written.
+        usort($usages, fn (array $left, array $right): int => [$left['line'], $left['character']] <=> [$right['line'], $right['character']]);
 
         $lines = $document->lines();
         $lenses = [];
 
-        foreach ($usages as $line => $count) {
+        foreach ($usages as ['line' => $line, 'character' => $character, 'count' => $count]) {
             $lenses[] = [
                 'range' => [
-                    'start' => ['line' => $line, 'character' => 0],
+                    'start' => ['line' => $line, 'character' => $character],
                     'end'   => ['line' => $line, 'character' => mb_strlen($lines[$line] ?? '')],
                 ],
                 'command' => [
                     'title'     => $count === 1 ? '1 usage' : "{$count} usages",
                     'command'   => 'laravel.showUsages',
-                    'arguments' => [$document->uri, ['line' => $line, 'character' => 0]],
+                    'arguments' => [$document->uri, ['line' => $line, 'character' => $character]],
                 ],
             ];
         }

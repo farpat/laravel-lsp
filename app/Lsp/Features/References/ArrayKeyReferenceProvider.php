@@ -34,9 +34,9 @@ abstract class ArrayKeyReferenceProvider extends DeclarationReferenceProvider
     }
 
     /**
-     * Get the declarations of the document, keyed by the line declaring them.
+     * Get the declarations of the document, with where each one is written.
      *
-     * @return array<int, array{name: string, character: int, length: int}>
+     * @return array<int, array{name: string, line: int, character: int, length: int}>
      */
     public function declarations(Document $document): array
     {
@@ -81,8 +81,9 @@ abstract class ArrayKeyReferenceProvider extends DeclarationReferenceProvider
             // Past the opening quote: the name is the key, not the string around it.
             $position = Position::fromOffset($document->content, $token->pos + 1);
 
-            $declarations[$position['line']] = [
+            $declarations[] = [
                 'name'      => $prefix . '.' . implode('.', $keys),
+                'line'      => $position['line'],
                 'character' => $position['character'],
                 'length'    => mb_strlen($token->text) - 2,
             ];

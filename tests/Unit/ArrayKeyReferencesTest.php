@@ -42,12 +42,12 @@ test('reads a translation key with the file and the arrays it sits under', funct
     $built = throwawayProject(['lang/fr/notifications.php' => $notifications]);
     $provider = new TranslationKeyReferenceProvider($built['project'], $built['index']);
 
-    expect($provider->declaredLines(documentOf($built, 'lang/fr/notifications.php')))->toBe([
-        3 => 'notifications.site_online',
-        4 => 'notifications.payment_failed',
-        7 => 'notifications.admin',
-        8 => 'notifications.admin.payment_failed',
-        9 => 'notifications.admin.shop_sold',
+    expect($provider->declaredNames(documentOf($built, 'lang/fr/notifications.php')))->toBe([
+        ['name' => 'notifications.site_online', 'line' => 3, 'character' => 5],
+        ['name' => 'notifications.payment_failed', 'line' => 4, 'character' => 5],
+        ['name' => 'notifications.admin', 'line' => 7, 'character' => 5],
+        ['name' => 'notifications.admin.payment_failed', 'line' => 8, 'character' => 9],
+        ['name' => 'notifications.admin.shop_sold', 'line' => 9, 'character' => 9],
     ]);
 });
 
@@ -61,9 +61,9 @@ test('counts the usages of a translation key, a nested one apart from its namesa
     $provider = new TranslationKeyReferenceProvider($built['project'], $built['index']);
 
     expect($provider->counts(documentOf($built, 'lang/fr/notifications.php')))->toBe([
-        3 => 2,
-        4 => 1,
-        8 => 2,
+        ['line' => 3, 'character' => 5, 'count' => 2],
+        ['line' => 4, 'character' => 5, 'count' => 1],
+        ['line' => 8, 'character' => 9, 'count' => 2],
     ]);
 });
 
@@ -74,8 +74,8 @@ test('reads a package translation with its namespace and a deeper file with its 
     ]);
     $provider = new TranslationKeyReferenceProvider($built['project'], $built['index']);
 
-    expect($provider->declaredLines(documentOf($built, 'lang/vendor/shop/fr/cart.php')))->toBe([0 => 'shop::cart.empty']);
-    expect($provider->declaredLines(documentOf($built, 'lang/fr/mails/welcome.php')))->toBe([0 => 'mails/welcome.subject']);
+    expect(array_column($provider->declaredNames(documentOf($built, 'lang/vendor/shop/fr/cart.php')), 'name'))->toBe(['shop::cart.empty']);
+    expect(array_column($provider->declaredNames(documentOf($built, 'lang/fr/mails/welcome.php')), 'name'))->toBe(['mails/welcome.subject']);
 });
 
 test('counts the usages of a nested config key', function () {
@@ -94,9 +94,25 @@ test('counts the usages of a nested config key', function () {
     $provider = new ConfigReferenceProvider($built['project'], $built['index']);
 
     expect($provider->counts(documentOf($built, 'config/services.php')))->toBe([
-        3 => 1,
-        4 => 1,
+        ['line' => 3, 'character' => 5, 'count' => 1],
+        ['line' => 4, 'character' => 9, 'count' => 1],
     ]);
+});
+
+it('keeps apart the keys written on the same line', function () {
+    $built = throwawayProject([
+        'config/shop.php' => "<?php\n\nreturn [\n    'a' => ['b' => 1, 'c' => 2],\n];",
+        'app/Shop.php'    => "<?php config('shop.a.b'); config('shop.a.c'); config('shop.a.c');",
+    ]);
+    $provider = new ConfigReferenceProvider($built['project'], $built['index']);
+    $document = documentOf($built, 'config/shop.php');
+
+    expect($provider->counts($document))->toBe([
+        ['line' => 3, 'character' => 13, 'count' => 1],
+        ['line' => 3, 'character' => 23, 'count' => 2],
+    ]);
+    expect($provider->get($document, ['line' => 3, 'character' => 13]))->toHaveCount(1);
+    expect($provider->get($document, ['line' => 3, 'character' => 23]))->toHaveCount(2);
 });
 
 test('links every declaration of a file to its usages', function () {

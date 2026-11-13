@@ -41,8 +41,8 @@ class DeclarationLinkProvider implements LinkProvider
         $links = [];
 
         foreach ($this->features->references() as $provider) {
-            foreach ($provider->declarations($document) as $line => $declaration) {
-                $links[] = $this->link($document, $line, $declaration);
+            foreach ($provider->declarations($document) as $declaration) {
+                $links[] = $this->link($document, $declaration);
             }
         }
 
@@ -52,11 +52,12 @@ class DeclarationLinkProvider implements LinkProvider
     /**
      * Get the link opening the usages of the given declaration.
      *
-     * @param  array{name: string, character: int, length: int}  $declaration
+     * @param  array{name: string, line: int, character: int, length: int}  $declaration
      * @return array<string, mixed>
      */
-    protected function link(Document $document, int $line, array $declaration): array
+    protected function link(Document $document, array $declaration): array
     {
+        $line = $declaration['line'];
         $arguments = [$document->uri, ['line' => $line, 'character' => $declaration['character']]];
 
         return [

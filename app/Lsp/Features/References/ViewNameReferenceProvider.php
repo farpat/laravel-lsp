@@ -39,18 +39,18 @@ class ViewNameReferenceProvider extends DeclarationReferenceProvider
     }
 
     /**
-     * Get the names the given document declares, keyed by the line declaring them.
+     * Get the names the given document declares, with where each one is written.
      *
      * The file itself is the declaration, so the count belongs to its first line. Read
      * line by line, every line of a Blade file would carry the same count.
      *
-     * @return array<int, string>
+     * @return array<int, array{name: string, line: int, character: int}>
      */
-    public function declaredLines(Document $document): array
+    public function declaredNames(Document $document): array
     {
         $name = $this->enabledFor($document) ? $this->nameAt($document, []) : null;
 
-        return $name === null ? [] : [0 => $name];
+        return $name === null ? [] : [['name' => $name, 'line' => 0, 'character' => 0]];
     }
 
     /**
